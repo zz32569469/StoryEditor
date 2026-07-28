@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { isValidDate } from '../expr/evaluate';
 import { collectProjectVariables } from '../expr/variables';
 import type { VariableType } from '../schema/story';
 import { useEditor } from '../state/store';
@@ -12,10 +13,26 @@ import { useEditor } from '../state/store';
  * 不設定的話播放到條件分支就會停住。
  */
 
+/** 面向寫劇本的人，不用程式術語。 */
 const TYPE_LABEL: Record<VariableType, string> = {
   number: '數字',
-  string: '字串',
-  bool: '布林',
+  string: '文字',
+  date: '日期',
+  bool: '是／否',
+};
+
+const TYPE_HINT: Record<VariableType, string> = {
+  number: '可以比大小，例如 courage >= 95',
+  string: '一段文字，例如角色的名字',
+  date: '格式 2026-01-01，內部以文字保存',
+  bool: '只有「是」或「否」兩種值',
+};
+
+const DEFAULT_PLACEHOLDER: Record<VariableType, string> = {
+  number: '例：0',
+  string: '例：小明',
+  date: '例：2026-01-01',
+  bool: 'true 或 false',
 };
 
 function parseDefault(raw: string, type: VariableType): number | string | boolean {
@@ -63,6 +80,9 @@ export function VariablePanel() {
 
             {project.variables.map((variable) => {
               const info = usage.get(variable.id);
+              // 空白代表還沒填，不算錯；填了但格式不對才標紅。
+              const raw = String(variable.default);
+              const badDate = variable.type === 'date' && raw !== '' && !isValidDate(raw);
               return (
                 <div key={variable.id} className="variable-item">
                   <input
@@ -74,6 +94,7 @@ export function VariablePanel() {
                   />
                   <select
                     value={variable.type}
+                    title={TYPE_HINT[variable.type]}
                     onChange={(e) => {
                       const type = e.target.value as VariableType;
                       updateVariable(variable.id, {
@@ -83,21 +104,18 @@ export function VariablePanel() {
                     }}
                   >
                     {(Object.keys(TYPE_LABEL) as VariableType[]).map((t) => (
-                      <option key={t} value={t}>
+                      <option key={t} value={t} title={TYPE_HINT[t]}>
                         {TYPE_LABEL[t]}
                       </option>
                     ))}
                   </select>
                   <input
-                    type="text"
+                    // 日期給真正的日期選擇器，不用背格式也不會打錯。
+                    type={variable.type === 'date' ? 'date' : 'text'}
+                    className={badDate ? 'is-invalid' : ''}
                     value={String(variable.default)}
-                    placeholder={
-                      variable.type === 'number'
-                        ? '例：0'
-                        : variable.type === 'bool'
-                          ? 'true 或 false'
-                          : '例：2000-07-24'
-                    }
+                    placeholder={DEFAULT_PLACEHOLDER[variable.type]}
+                    title={badDate ? '日期格式應為 2026-01-01' : undefined}
                     onChange={(e) =>
                       updateVariable(variable.id, {
                         default: parseDefault(e.target.value, variable.type),

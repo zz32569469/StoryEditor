@@ -9,7 +9,31 @@ import type { Expr } from './parse';
 
 export type Value = number | string | boolean;
 
+/** 求值時真正存在的型別。 */
 export type ValueType = 'number' | 'string' | 'bool';
+
+/**
+ * 使用者在介面上選的型別。
+ *
+ * 比執行期型別多一個「日期」—— 寫劇本的人不需要知道日期內部是字串，
+ * 但需要一個明確的欄位告訴他該填什麼格式，介面也才能給日期選擇器。
+ */
+export const DECLARED_TYPES = ['number', 'string', 'bool', 'date'] as const;
+export type DeclaredType = (typeof DECLARED_TYPES)[number];
+
+/** 宣告型別 → 執行期型別。日期就是字串，只是介面上另外看待。 */
+export function storageType(type: DeclaredType): ValueType {
+  return type === 'date' ? 'string' : type;
+}
+
+/** 日期一律用 YYYY-MM-DD，與 <input type="date"> 的值格式一致。 */
+export const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+export function isValidDate(value: string): boolean {
+  if (!DATE_PATTERN.test(value)) return false;
+  const date = new Date(value);
+  return !Number.isNaN(date.getTime());
+}
 
 export interface EvalContext {
   /** 變數目前的值。 */
@@ -29,14 +53,14 @@ export interface HostFunction {
    * 用於推測變數型別 —— 少了它就只能靠「運算式裡有沒有出現函式名」猜，
    * 那會把 `CalcAge(birthday, ...)` 的**參數**也誤判成數字。
    */
-  returns: ValueType;
+  returns: DeclaredType;
   /**
    * 各參數的型別。arity 為 -1（不限個數）時只放一個，代表所有參數。
    *
    * 同樣是為了型別推測：`Max(base, 25)` 能推出 base 是數字，
-   * 而 `CalcAge(birthday, ...)` 能推出 birthday 是字串。
+   * 而 `CalcAge(birthday, ...)` 能推出 birthday 是日期。
    */
-  params: ValueType[];
+  params: DeclaredType[];
 }
 
 export type EvalResult = { ok: true; value: Value } | { ok: false; message: string };
@@ -82,7 +106,7 @@ export const BUILTIN_FUNCTIONS: Record<string, HostFunction> = {
   CalcAge: {
     arity: 2,
     returns: 'number',
-    params: ['string', 'string'],
+    params: ['date', 'date'],
     description: '（預覽暫代）由出生日與基準日算出年齡',
     call: (args) => {
       const birth = new Date(String(args[0]));

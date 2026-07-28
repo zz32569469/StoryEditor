@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DECLARED_TYPES } from '../expr/evaluate';
 import { IdentifierSchema, KeySchema, LangCodeSchema, UlidSchema } from './ids';
 import { TagRegistrySchema, TagSyntaxSchema } from './tags';
 
@@ -9,8 +10,10 @@ import { TagRegistrySchema, TagSyntaxSchema } from './tags';
  *        流程控制列（if / set / in / end）與製作欄位。全為選填，1.0.0 的檔案照讀。
  * 1.2.0：新增 source / sourceId / sourceColumns，記住每個實體來自來源表的哪一列，
  *        讓劇本能以原本的欄位與編號匯出回去。全為選填。
+ * 1.3.0：變數型別新增 `date`（執行期仍是字串）。舊檔照讀；
+ *        但含 date 的檔案給 1.2.0 以前的讀取端會失敗。
  */
-export const FORMAT_VERSION = '1.2.0';
+export const FORMAT_VERSION = '1.3.0';
 
 /**
  * 多語系文字。key 為語言代碼，value 為含特效標記的字串。
@@ -54,7 +57,11 @@ export const SourceJumpSchema = z.string();
 /** 尚未有正式欄位的製作資訊，原樣保留。key 為來源表的欄名。 */
 export const ExtrasSchema = z.record(z.string(), z.string());
 
-export const VariableTypeSchema = z.enum(['bool', 'number', 'string']);
+/**
+ * 型別清單由運算式引擎提供，避免兩邊各維護一份而漂移。
+ * 「日期」在執行期就是字串，只是介面上另外看待（見 evaluate.ts 的 storageType）。
+ */
+export const VariableTypeSchema = z.enum(DECLARED_TYPES);
 export type VariableType = z.infer<typeof VariableTypeSchema>;
 
 export const VariableSchema = z.object({

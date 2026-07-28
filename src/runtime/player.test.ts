@@ -164,12 +164,34 @@ describe('玩家輸入', () => {
     expect(state.variables.get('lastName')).toBe('柚');
   });
 
-  it('數字外觀的輸入轉成數字，否則比較會失敗', () => {
+  it('沒有宣告時，數字外觀的輸入轉成數字，否則比較會失敗', () => {
     const input = createNode({ text: {}, kind: 'input', expression: 'age', next: null });
     const project = build([input]);
 
     const state = submitInput(project, startScene(project, sceneOf(project)), { age: '30' });
     expect(state.variables.get('age')).toBe(30);
+  });
+
+  it('宣告為日期的變數維持字串，不會被轉成數字', () => {
+    const input = createNode({ text: {}, kind: 'input', expression: 'birthday', next: null });
+    const project = build([input]);
+    project.variables = [{ id: 'birthday', type: 'date', default: '', description: '' }];
+
+    const state = submitInput(project, startScene(project, sceneOf(project)), {
+      birthday: '2026-01-01',
+    });
+    // 轉成數字的話 CalcAge 會拿到無效值，分支就全走錯。
+    expect(state.variables.get('birthday')).toBe('2026-01-01');
+  });
+
+  it('宣告型別優先於外觀猜測', () => {
+    const input = createNode({ text: {}, kind: 'input', expression: 'code', next: null });
+    const project = build([input]);
+    project.variables = [{ id: 'code', type: 'string', default: '', description: '' }];
+
+    // 郵遞區號這種「看起來像數字的文字」不該被轉成數字。
+    const state = submitInput(project, startScene(project, sceneOf(project)), { code: '00812' });
+    expect(state.variables.get('code')).toBe('00812');
   });
 });
 

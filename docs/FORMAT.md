@@ -106,6 +106,25 @@ StoryProject
 匯入劇本時，運算式中的變數會自動補上宣告。只被讀取卻從未被賦值的變數
 標示為「需由遊戲提供」。
 
+### 變數型別
+
+介面上讓使用者選的型別比執行期多一個「日期」——
+寫劇本的人不需要知道日期內部是字串，但需要明確的欄位告訴他該填什麼格式。
+
+| 介面顯示 | 存檔值 | 執行期型別 | 說明 |
+|---|---|---|---|
+| 數字 | `number` | number | |
+| 文字 | `string` | string | |
+| 日期 | `date` | **string** | 格式 `YYYY-MM-DD`，介面給日期選擇器 |
+| 是／否 | `bool` | bool | |
+
+Unity 端只需處理三種執行期型別，`date` 一律當字串。
+`CalcAge` 的參數宣告為 `date`，因此匯入時 `CalcAge(birthday, …)` 會自動把
+`birthday` 推成日期而不是一般文字。
+
+玩家輸入節點依變數的宣告型別決定怎麼轉換：宣告為日期或文字的一律保持字串，
+避免「00812」這種看起來像數字的文字被轉成 `812`。
+
 ### node.extras
 
 匯入既有劇本時，來源表格常帶著本工具還沒支援的欄位（OST、畫面效果、屬性變化、
@@ -333,6 +352,7 @@ cell key = <ownerKind>:<ownerId>:<field>:<lang>   例：node:01KYJ…:text:zh
 
 | 版本 | 變更 |
 |---|---|
+| 1.3.0 | 變數型別新增 `date`（執行期仍是字串，YYYY-MM-DD）。舊檔照讀；含 `date` 的檔案給 1.2.0 以前的讀取端會失敗 |
 | 1.2.0 | 新增 `node.source` / `sourceJump`、`choice`／`branch` 的 `sourceId` / `sourceJump` / `speaker` / `extras`、`scene.sourceColumns`。記住每個實體來自來源劇本表的哪一列，使匯出能還原原本的欄位與編號 |
 | 1.1.0 | 新增 `node.kind` / `expression` / `branches` / `extras`；`portrait` 由 key 放寬為自由字串（美術資產常用中文命名） |
 | 1.0.0 | 初版 |

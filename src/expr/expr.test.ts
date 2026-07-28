@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createEmptyProject, createNode, createScene } from '../schema/factory';
 import { newId } from '../schema/ids';
-import { BUILTIN_FUNCTIONS, evaluate, truthy, type Value } from './evaluate';
+import { BUILTIN_FUNCTIONS, evaluate, isValidDate, storageType, truthy, type Value } from './evaluate';
 import { renamePlaceholder } from '../tags/interpolate';
 import {
   collectVariables,
@@ -217,11 +217,11 @@ describe('變數型別推測', () => {
   });
 
   it('函式回傳型別決定賦值目標，參數不受影響', () => {
-    // 這正是字串比對版本會判錯的地方：birthday 是日期字串而非數字。
+    // 這正是字串比對版本會判錯的地方：兩個參數是日期而非數字。
     expect(typesOf(project([{ set: 'age = CalcAge(birthday, referenceDate)' }]))).toEqual({
       age: 'number',
-      birthday: 'string',
-      referenceDate: 'string',
+      birthday: 'date',
+      referenceDate: 'date',
     });
   });
 
@@ -251,6 +251,30 @@ describe('變數型別推測', () => {
 
     expect(declareMissingVariables(p)).toEqual([]);
     expect(p.variables[0]!.default).toBe(50);
+  });
+});
+
+describe('日期型別', () => {
+  it('日期在執行期就是字串', () => {
+    expect(storageType('date')).toBe('string');
+    expect(storageType('number')).toBe('number');
+  });
+
+  it('驗證 YYYY-MM-DD 格式', () => {
+    expect(isValidDate('2026-01-01')).toBe(true);
+    expect(isValidDate('2026-1-1')).toBe(false);
+    expect(isValidDate('2026/01/01')).toBe(false);
+    expect(isValidDate('2026-13-45')).toBe(false);
+    expect(isValidDate('')).toBe(false);
+  });
+
+  it('日期值可以直接餵給 CalcAge', () => {
+    const parsed = parseAssignment('age = CalcAge(birth, today)');
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const result = evaluate(parsed.value.value, ctx({ birth: '2000-07-24', today: '2026-01-01' }));
+    expect(result).toEqual({ ok: true, value: 25 });
   });
 });
 

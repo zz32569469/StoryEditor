@@ -47,12 +47,36 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
     setInputs({});
   };
 
+  const typeOf = (name: string) => project.variables.find((v) => v.id === name)?.type;
+
+  /** 日期給日期選擇器、數字給數字鍵盤，寫劇本的人不必記格式。 */
+  const inputTypeOf = (name: string) => {
+    const type = typeOf(name);
+    if (type === 'date') return 'date';
+    if (type === 'number') return 'number';
+    return 'text';
+  };
+
+  const inputPlaceholderOf = (name: string) => {
+    switch (typeOf(name)) {
+      case 'date':
+        return '例：2026-01-01';
+      case 'number':
+        return '例：25';
+      case 'bool':
+        return 'true 或 false';
+      default:
+        return '例：小明';
+    }
+  };
+
   /** 讓使用者當場改變數，測試不同分支。 */
   const setVariable = (id: string, raw: string) => {
     setState((previous) => {
       const variables = new Map(previous.variables);
       const declared = project.variables.find((v) => v.id === id);
       let value: Value = raw;
+      // 日期維持字串 —— 它在執行期就是字串，轉成數字會讓 CalcAge 失效。
       if (declared?.type === 'number') value = Number(raw) || 0;
       else if (declared?.type === 'bool') value = raw === 'true';
       variables.set(id, value);
@@ -95,8 +119,9 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
                   {declared?.description ? ' *' : ''}
                 </span>
                 <input
-                  type="text"
+                  type={declared?.type === 'date' ? 'date' : 'text'}
                   value={value === undefined ? '' : String(value)}
+                  placeholder={declared?.type === 'date' ? '2026-01-01' : undefined}
                   onChange={(e) => setVariable(id, e.target.value)}
                 />
               </label>
@@ -128,13 +153,9 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
               <label key={name} className="field">
                 <span>{name}</span>
                 <input
-                  type="text"
+                  type={inputTypeOf(name)}
                   value={inputs[name] ?? ''}
-                  placeholder={
-                    project.variables.find((v) => v.id === name)?.type === 'number'
-                      ? '輸入數字'
-                      : '輸入文字（看起來像數字的會自動轉成數字）'
-                  }
+                  placeholder={inputPlaceholderOf(name)}
                   onChange={(e) => setInputs((prev) => ({ ...prev, [name]: e.target.value }))}
                 />
               </label>

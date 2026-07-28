@@ -1,4 +1,4 @@
-import { BUILTIN_FUNCTIONS, type HostFunction, type ValueType } from './evaluate';
+import { BUILTIN_FUNCTIONS, type DeclaredType, type HostFunction } from './evaluate';
 import {
   collectVariables,
   parseAssignment,
@@ -24,17 +24,17 @@ export interface VariableUsage {
   assigned: boolean;
   /** 被讀取過（出現在條件或運算式右側）。 */
   read: boolean;
-  type: ValueType;
+  type: DeclaredType;
 }
 
-type Known = Map<string, ValueType>;
+type Known = Map<string, DeclaredType>;
 
 /** 推測一段運算式的結果型別。unknown 代表證據不足。 */
 function inferExpr(
   expr: Expr,
   known: Known,
   functions: Record<string, HostFunction>,
-): ValueType | 'unknown' {
+): DeclaredType | 'unknown' {
   switch (expr.kind) {
     case 'number':
       return 'number';
@@ -52,10 +52,11 @@ function inferExpr(
       const { op } = expr;
       if (['==', '!=', '<', '<=', '>', '>=', '&&', '||'].includes(op)) return 'bool';
       if (op !== '+') return 'number';
-      // `+` 只要有一邊是字串就是字串串接。
+      // `+` 只要有一邊是文字就是字串串接。日期在執行期就是字串，一併算進來。
       const left = inferExpr(expr.left, known, functions);
       const right = inferExpr(expr.right, known, functions);
-      if (left === 'string' || right === 'string') return 'string';
+      const textish = (t: typeof left) => t === 'string' || t === 'date';
+      if (textish(left) || textish(right)) return 'string';
       if (left === 'number' && right === 'number') return 'number';
       return 'unknown';
     }
@@ -66,7 +67,7 @@ function inferExpr(
  * 從運算式的使用方式反推變數型別。
  *
  * `age < 25` → age 是數字；`Max(base, 25)` → base 是數字；
- * `CalcAge(birthday, ...)` → birthday 是字串（由函式自己宣告的參數型別決定，
+ * `CalcAge(birthday, ...)` → birthday 是日期（由函式自己宣告的參數型別決定，
  * 不是「出現在函式裡就當數字」）。
  */
 function constrainFromUsage(
@@ -187,7 +188,13 @@ export function collectProjectVariables(
     .sort((a, b) => a.id.localeCompare(b.id));
 }
 
-const DEFAULT_BY_TYPE = { number: 0, string: '', bool: false } as const;
+const DEFAULT_BY_TYPE = {
+  number: 0,
+  string: '',
+  bool: false,
+  // 日期給空字串而非今天：預設成今天會讓「忘了填」看起來像「填好了」。
+  date: '',
+} as const;
 
 /**
  * 把萃取出的變數補進專案，不覆蓋已存在的宣告。

@@ -158,8 +158,8 @@ describe('匯入既有劇本格式', () => {
 
     const age = project.variables.find((v) => v.id === 'age')!;
     expect(age.type).toBe('number');
-    // birthday 是 CalcAge 的參數（日期字串），不該被推成數字。
-    expect(project.variables.find((v) => v.id === 'birthday')!.type).toBe('string');
+    // birthday 是 CalcAge 的參數，應推成日期而不是數字或一般文字。
+    expect(project.variables.find((v) => v.id === 'birthday')!.type).toBe('date');
   });
 
   it('依台詞中的括號用量判定標記語法', async () => {

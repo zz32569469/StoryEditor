@@ -221,8 +221,25 @@ export function submitInput(
 
   const variables = new Map(state.variables);
   for (const name of state.pendingInputs) {
-    // 數字外觀的輸入轉成數字，否則 age < 25 這種比較會失敗。
     const raw = values[name] ?? '';
+    const declared = project.variables.find((v) => v.id === name)?.type;
+
+    if (declared === 'number') {
+      const asNumber = typeof raw === 'string' ? Number(raw) : Number(raw);
+      variables.set(name, Number.isFinite(asNumber) ? asNumber : 0);
+      continue;
+    }
+    // 日期與文字都保持字串 —— 日期若被轉成數字，CalcAge 會拿到無效值。
+    if (declared === 'date' || declared === 'string') {
+      variables.set(name, String(raw));
+      continue;
+    }
+    if (declared === 'bool') {
+      variables.set(name, raw === true || raw === 'true');
+      continue;
+    }
+
+    // 沒有宣告時只好看外觀猜：數字外觀轉數字，否則 age < 25 這種比較會失敗。
     const asNumber = typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN;
     variables.set(name, Number.isFinite(asNumber) ? asNumber : raw);
   }
