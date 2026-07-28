@@ -130,6 +130,11 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
                 <input
                   type="text"
                   value={inputs[name] ?? ''}
+                  placeholder={
+                    project.variables.find((v) => v.id === name)?.type === 'number'
+                      ? '輸入數字'
+                      : '輸入文字（看起來像數字的會自動轉成數字）'
+                  }
                   onChange={(e) => setInputs((prev) => ({ ...prev, [name]: e.target.value }))}
                 />
               </label>

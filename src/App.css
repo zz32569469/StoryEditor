@@ -667,6 +667,49 @@
   gap: 6px;
 }
 
+.choice-row--branch {
+  grid-template-columns: 1fr 140px;
+  align-items: start;
+}
+
+/* ---------- 運算式欄位 ---------- */
+
+.expr-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.expr-field input {
+  font-family: ui-monospace, "Cascadia Code", monospace;
+  font-size: 12px;
+}
+
+.expr-field input.is-invalid {
+  border-color: var(--danger);
+}
+
+.expr-hint,
+.expr-error {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.expr-hint {
+  color: var(--text-dim);
+}
+
+.expr-error {
+  color: var(--danger);
+}
+
+/* 佔位文字要能顯示多行說明。 */
+textarea::placeholder {
+  line-height: 1.6;
+}
+
 .character-row {
   display: flex;
   flex-direction: column;

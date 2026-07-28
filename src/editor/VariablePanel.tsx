@@ -68,6 +68,7 @@ export function VariablePanel() {
                   <input
                     type="text"
                     value={variable.id}
+                    placeholder="例：courage"
                     title="改名會同步更新條件式、賦值與台詞裡的 <插值>"
                     onChange={(e) => updateVariable(variable.id, { id: e.target.value })}
                   />
@@ -90,6 +91,13 @@ export function VariablePanel() {
                   <input
                     type="text"
                     value={String(variable.default)}
+                    placeholder={
+                      variable.type === 'number'
+                        ? '例：0'
+                        : variable.type === 'bool'
+                          ? 'true 或 false'
+                          : '例：2000-07-24'
+                    }
                     onChange={(e) =>
                       updateVariable(variable.id, {
                         default: parseDefault(e.target.value, variable.type),
@@ -99,7 +107,7 @@ export function VariablePanel() {
                   <input
                     type="text"
                     value={variable.description}
-                    placeholder={info?.assigned === false ? '由遊戲提供' : ''}
+                    placeholder={info?.assigned === false ? '由遊戲提供' : '這個變數代表什麼'}
                     onChange={(e) => updateVariable(variable.id, { description: e.target.value })}
                   />
                   <button

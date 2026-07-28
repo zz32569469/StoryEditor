@@ -2,6 +2,7 @@ import { useRef } from 'react';
 
 import { useEditor, useSelectedNode, useSelectedScene } from '../state/store';
 import { parseText } from '../tags/parse';
+import { ExpressionField } from './ExpressionField';
 import { KIND_LABEL, summarizeNode } from './nodeKind';
 import { TagToolbar } from './TagToolbar';
 
@@ -68,25 +69,27 @@ export function NodeEditor() {
         </p>
 
         {(node.kind === 'set' || node.kind === 'input') && (
-          <label className="field field--stack">
-            <span>運算式</span>
-            <input
-              type="text"
+          <div className="field field--stack">
+            <span>{node.kind === 'set' ? '賦值' : '接收輸入的變數'}</span>
+            <ExpressionField
+              kind={node.kind === 'set' ? 'assignment' : 'input'}
               value={node.expression ?? ''}
-              onChange={(e) => updateNode(node.id, { expression: e.target.value })}
+              onChange={(next) => updateNode(node.id, { expression: next })}
+              showFunctions={node.kind === 'set'}
             />
-          </label>
+          </div>
         )}
 
         {node.kind === 'branch' && (
           <div className="field field--stack">
-            <span>分支（由上而下判斷）</span>
-            {node.branches.map((branch) => (
-              <div key={branch.id} className="choice-row">
-                <input
-                  type="text"
+            <span>分支（由上而下判斷，取第一個成立的）</span>
+            {node.branches.map((branch, index) => (
+              <div key={branch.id} className="choice-row choice-row--branch">
+                <ExpressionField
+                  kind="condition"
                   value={branch.condition}
-                  onChange={(e) => updateBranch(node.id, branch.id, { condition: e.target.value })}
+                  onChange={(next) => updateBranch(node.id, branch.id, { condition: next })}
+                  showFunctions={index === 0}
                 />
                 <select
                   value={branch.targetNodeId ?? ''}
@@ -151,7 +154,7 @@ export function NodeEditor() {
         <input
           type="text"
           value={node.portrait ?? ''}
-          placeholder="例：warden_neutral"
+          placeholder="例：便服-微笑（美術資產的代號）"
           onChange={(e) => updateNode(node.id, { portrait: e.target.value || undefined })}
         />
       </label>
@@ -172,7 +175,10 @@ export function NodeEditor() {
           ref={textareaRef}
           rows={5}
           value={text}
-          placeholder="在這裡輸入台詞，可用上方按鈕加入特效標記"
+          placeholder={
+            '在這裡輸入台詞。選一段字後按上方按鈕可加特效，例如 {shake}活下來{/shake}\n' +
+            '寫 <變數名> 會在播放時代入該變數當下的值'
+          }
           onChange={(e) => setNodeText(node.id, lang, e.target.value)}
         />
         {issues.length > 0 && (
@@ -197,7 +203,7 @@ export function NodeEditor() {
             <input
               type="text"
               value={choice.text[lang] ?? ''}
-              placeholder="選項文字"
+              placeholder="例：「我不是來活下來的。」"
               onChange={(e) => setChoiceText(node.id, choice.id, lang, e.target.value)}
             />
             <select
@@ -247,7 +253,7 @@ export function NodeEditor() {
         <textarea
           rows={2}
           value={node.notes}
-          placeholder="例：語氣平靜，不要驚悚化"
+          placeholder="例：語氣平靜，不要驚悚化。這裡的說明會一起匯出給譯者"
           onChange={(e) => updateNode(node.id, { notes: e.target.value })}
         />
       </label>

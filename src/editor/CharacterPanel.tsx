@@ -19,6 +19,7 @@ export function CharacterPanel() {
             <input
               type="text"
               value={character.id}
+              placeholder="例：warden（小寫英數與底線）"
               onChange={(e) => updateCharacter(character.id, { id: e.target.value })}
               title="程式用的代號。改了會自動更新所有引用它的台詞。"
             />
@@ -30,6 +31,7 @@ export function CharacterPanel() {
             <input
               type="text"
               value={character.name[lang] ?? ''}
+              placeholder="玩家看到的名字，例：看守者"
               onChange={(e) =>
                 updateCharacter(character.id, {
                   name: { ...character.name, [lang]: e.target.value },
@@ -42,7 +44,7 @@ export function CharacterPanel() {
             <input
               type="text"
               value={character.defaultPortrait ?? ''}
-              placeholder="例：warden_neutral"
+              placeholder="例：便服-微笑"
               onChange={(e) =>
                 updateCharacter(character.id, { defaultPortrait: e.target.value || undefined })
               }
