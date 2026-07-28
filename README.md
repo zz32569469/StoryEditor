@@ -1,5 +1,10 @@
 # StoryEditor
 
+**線上使用：https://zz32569469.github.io/StoryEditor/**
+
+不需安裝、不需帳號，開網頁就能用。所有資料都留在你的瀏覽器裡，不會上傳到任何地方
+（自動存檔存在 localStorage，專案檔與 Excel 都是本機下載／上傳）。
+
 遊戲劇情／對話編輯器。**編輯器跑在網頁，播放器在 Unity**，兩端以一份平台無關的 `.story.json` 為契約。
 
 - 支援分支選項、條件、變數的完整對話系統
@@ -8,7 +13,7 @@
 
 資料格式規格見 [`docs/FORMAT.md`](docs/FORMAT.md)。
 
-## 指令
+## 本機開發
 
 ```bash
 npm install
