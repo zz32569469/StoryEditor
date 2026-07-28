@@ -120,11 +120,43 @@
 }
 
 .pane--editor {
-  width: 420px;
+  /* 寬度由 useSplitPane 以 inline style 指定。 */
   flex-shrink: 0;
-  border-left: 1px solid var(--border);
   background: var(--bg-panel);
   padding: 12px 14px 40px;
+}
+
+/* ---------- 可拖曳的分隔線 ---------- */
+
+.resizer {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: var(--border);
+  position: relative;
+  touch-action: none;
+}
+
+.resizer:hover,
+.resizer:focus-visible {
+  background: var(--accent);
+  outline: none;
+}
+
+/* 加大實際可抓取範圍，不必精準對到那 5px。 */
+.resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 -4px;
+}
+
+/* 拖曳時整頁禁止選字，否則會把台詞一起反白。 */
+.workspace.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.workspace.is-resizing .resizer {
+  background: var(--accent);
 }
 
 /* ---------- 台詞畫面 ---------- */

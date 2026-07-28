@@ -15,6 +15,7 @@ import { DialogueStage } from './preview/DialogueStage';
 import { KIND_LABEL } from './editor/nodeKind';
 import { checkReferences, validateStoryProject } from './schema/validate';
 import { useEditor } from './state/store';
+import { useSplitPane } from './ui/useSplitPane';
 import { defaultDecisions, mergeCells, resolveAccepted, type MergeReport } from './sync/merge';
 
 import './App.css';
@@ -40,6 +41,7 @@ export default function App() {
     applyImportedCells,
   } = useEditor();
 
+  const { containerRef, width: paneWidth, isResizing, resizerProps, resetWidth } = useSplitPane();
   const [tab, setTab] = useState<Tab>('dialogue');
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [status, setStatus] = useState('');
@@ -281,12 +283,14 @@ export default function App() {
         </div>
       )}
 
-      <main className="workspace">
+      <main ref={containerRef} className={`workspace ${isResizing ? 'is-resizing' : ''}`}>
         <section className="pane pane--preview">
           <DialogueStage />
         </section>
 
-        <aside className="pane pane--editor">
+        <div className="resizer" {...resizerProps} onDoubleClick={resetWidth} />
+
+        <aside className="pane pane--editor" style={{ width: paneWidth }}>
           <nav className="tabs">
             <button
               type="button"
