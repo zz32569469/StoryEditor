@@ -4,6 +4,7 @@ import { CharacterPanel } from './editor/CharacterPanel';
 import { ImportReport } from './editor/ImportReport';
 import { NodeEditor } from './editor/NodeEditor';
 import { SceneNodeList } from './editor/SceneNodeList';
+import { VariablePanel } from './editor/VariablePanel';
 import { exportWorkbook } from './excel/export';
 import { readWorkbook } from './excel/import';
 import { currentCellMap } from './excel/rows';
@@ -18,7 +19,7 @@ import { defaultDecisions, mergeCells, resolveAccepted, type MergeReport } from 
 
 import './App.css';
 
-type Tab = 'dialogue' | 'characters';
+type Tab = 'dialogue' | 'characters' | 'variables';
 
 interface PendingImport {
   report: MergeReport;
@@ -301,17 +302,27 @@ export default function App() {
             >
               人物
             </button>
+            <button
+              type="button"
+              className={tab === 'variables' ? 'is-active' : ''}
+              onClick={() => setTab('variables')}
+            >
+              變數
+              {project.variables.length > 0 && (
+                <em className="tab-count">{project.variables.length}</em>
+              )}
+            </button>
           </nav>
 
-          {tab === 'dialogue' ? (
+          {tab === 'dialogue' && (
             <>
               <SceneNodeList />
               <hr />
               <NodeEditor />
             </>
-          ) : (
-            <CharacterPanel />
           )}
+          {tab === 'characters' && <CharacterPanel />}
+          {tab === 'variables' && <VariablePanel />}
         </aside>
       </main>
 

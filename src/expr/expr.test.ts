@@ -3,7 +3,14 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyProject, createNode, createScene } from '../schema/factory';
 import { newId } from '../schema/ids';
 import { BUILTIN_FUNCTIONS, evaluate, truthy, type Value } from './evaluate';
-import { collectVariables, parseAssignment, parseExpression, parseInputTargets } from './parse';
+import { renamePlaceholder } from '../tags/interpolate';
+import {
+  collectVariables,
+  parseAssignment,
+  parseExpression,
+  parseInputTargets,
+  renameIdentifier,
+} from './parse';
 import { collectProjectVariables, declareMissingVariables } from './variables';
 
 const ctx = (vars: Record<string, Value> = {}) => ({
@@ -244,6 +251,32 @@ describe('變數型別推測', () => {
 
     expect(declareMissingVariables(p)).toEqual([]);
     expect(p.variables[0]!.default).toBe(50);
+  });
+});
+
+describe('變數改名', () => {
+  it('只換真正是該變數的識別字', () => {
+    expect(renameIdentifier('age >= 25 && ageLimit < age', 'age', 'years')).toBe(
+      'years >= 25 && ageLimit < years',
+    );
+  });
+
+  it('不誤傷同名的函式', () => {
+    expect(renameIdentifier('Max(Max, 1)', 'Max', 'Peak')).toBe('Max(Peak, 1)');
+  });
+
+  it('不動字串字面值', () => {
+    expect(renameIdentifier("name + 'name'", 'name', 'title')).toBe("title + 'name'");
+  });
+
+  it('保留原本的空白與寫法', () => {
+    expect(renameIdentifier('  age   <  25  ', 'age', 'y')).toBe('  y   <  25  ');
+  });
+
+  it('台詞裡的 <插值> 也要跟著換', () => {
+    expect(renamePlaceholder('你今年 <age> 歲，<ageLimit> 是上限', 'age', 'years')).toBe(
+      '你今年 <years> 歲，<ageLimit> 是上限',
+    );
   });
 });
 

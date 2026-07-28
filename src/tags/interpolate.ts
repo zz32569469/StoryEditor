@@ -45,3 +45,8 @@ export function interpolate(
 export function collectPlaceholders(text: string): string[] {
   return interpolate(text, () => undefined).used;
 }
+
+/** 變數改名時，台詞裡的 `<舊名>` 也要跟著換，否則插值會失效。 */
+export function renamePlaceholder(text: string, from: string, to: string): string {
+  return text.replace(PLACEHOLDER_RE, (whole, name: string) => (name === from ? `<${to}>` : whole));
+}

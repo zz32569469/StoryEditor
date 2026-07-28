@@ -18,6 +18,8 @@ import type {
   StoryProject,
   Variable,
 } from '../schema/story';
+import { renameIdentifier } from '../expr/parse';
+import { renamePlaceholder } from '../tags/interpolate';
 import { applyCells } from '../sync/apply';
 
 /**
@@ -353,11 +355,29 @@ export const useEditor = create<EditorState>()(
       set((state) => {
         const variable = state.project.variables.find((v) => v.id === variableId);
         if (!variable) return;
-        if (patch.id && patch.id !== variableId) {
+
+        const nextId = patch.id;
+        if (nextId && nextId !== variableId) {
+          // 變數名散落在三個地方：條件式、賦值／輸入運算式，以及台詞裡的 <插值>。
+          // 少改任何一處，改名就等於把劇本改壞。
           for (const scene of state.project.scenes) {
             for (const node of scene.nodes) {
+              for (const branch of node.branches) {
+                branch.condition = renameIdentifier(branch.condition, variableId, nextId);
+              }
+              if (node.expression) {
+                node.expression = renameIdentifier(node.expression, variableId, nextId);
+              }
               for (const action of node.actions) {
-                if (action.variable === variableId) action.variable = patch.id;
+                if (action.variable === variableId) action.variable = nextId;
+              }
+              for (const lang of Object.keys(node.text)) {
+                node.text[lang] = renamePlaceholder(node.text[lang]!, variableId, nextId);
+              }
+              for (const choice of node.choices) {
+                for (const lang of Object.keys(choice.text)) {
+                  choice.text[lang] = renamePlaceholder(choice.text[lang]!, variableId, nextId);
+                }
               }
             }
           }

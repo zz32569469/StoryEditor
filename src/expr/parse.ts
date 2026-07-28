@@ -312,6 +312,33 @@ export function parseInputTargets(input: string): ParseResult<string[]> {
   return { ok: true, value: names };
 }
 
+/**
+ * 在運算式中把某個變數改名。
+ *
+ * 用詞法而非字串取代 —— 直接 replace 會誤傷函式名、字串字面值，
+ * 以及 `age` 出現在 `ageLimit` 之中的情形。
+ * 保留原本的空白與寫法，只換掉真正是該變數的識別字。
+ */
+export function renameIdentifier(source: string, from: string, to: string): string {
+  const tokens = tokenize(source);
+  if (!tokens.ok) return source;
+
+  let out = '';
+  let cursor = 0;
+
+  tokens.value.forEach((token, index) => {
+    if (token.type !== 'name' || token.text !== from) return;
+    // 後面接 ( 的是函式名，不是變數。
+    const next = tokens.value[index + 1];
+    if (next?.type === 'op' && next.text === '(') return;
+
+    out += source.slice(cursor, token.index) + to;
+    cursor = token.index + token.text.length;
+  });
+
+  return out + source.slice(cursor);
+}
+
 /** 走訪運算式中出現的所有變數名。 */
 export function collectVariables(expr: Expr, out = new Set<string>()): Set<string> {
   switch (expr.kind) {
