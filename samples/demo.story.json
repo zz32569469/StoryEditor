@@ -1,0 +1,172 @@
+{
+  "meta": {
+    "formatVersion": "1.0.0",
+    "projectName": "Demo：格式示範",
+    "languages": ["zh", "en"],
+    "baseLanguage": "zh",
+    "updatedAt": "2026-07-28T00:00:00.000Z"
+  },
+  "tagRegistry": [
+    { "name": "b", "kind": "paired", "params": [], "description": "粗體" },
+    { "name": "i", "kind": "paired", "params": [], "description": "斜體" },
+    {
+      "name": "color",
+      "kind": "paired",
+      "positional": "value",
+      "params": [{ "name": "value", "type": "color", "description": "十六進位色碼，例 #ff3333" }],
+      "description": "文字顏色"
+    },
+    {
+      "name": "size",
+      "kind": "paired",
+      "positional": "value",
+      "params": [{ "name": "value", "type": "number", "default": 1.5, "description": "相對於基準字級的倍率" }],
+      "description": "文字大小（倍率）"
+    },
+    {
+      "name": "font",
+      "kind": "paired",
+      "positional": "value",
+      "params": [{ "name": "value", "type": "string", "description": "字型代號，兩端各自對應到實際字型資產" }],
+      "description": "切換字型"
+    },
+    {
+      "name": "shake",
+      "kind": "paired",
+      "params": [
+        { "name": "amp", "type": "number", "default": 2, "description": "振幅（像素／單位）" },
+        { "name": "freq", "type": "number", "default": 20, "description": "頻率（每秒）" }
+      ],
+      "description": "逐字抖動"
+    },
+    {
+      "name": "wave",
+      "kind": "paired",
+      "params": [
+        { "name": "amp", "type": "number", "default": 3, "description": "振幅" },
+        { "name": "freq", "type": "number", "default": 2, "description": "頻率（每秒）" }
+      ],
+      "description": "波浪起伏"
+    },
+    {
+      "name": "speed",
+      "kind": "paired",
+      "positional": "value",
+      "params": [{ "name": "value", "type": "number", "default": 0.5, "description": "相對於基準速度的倍率，小於 1 為變慢" }],
+      "description": "逐字速度（作用於選取範圍）"
+    },
+    {
+      "name": "wait",
+      "kind": "inline",
+      "positional": "value",
+      "params": [{ "name": "value", "type": "number", "default": 0.3, "description": "停頓秒數" }],
+      "description": "停頓"
+    },
+    {
+      "name": "sfx",
+      "kind": "inline",
+      "positional": "value",
+      "params": [{ "name": "value", "type": "string", "description": "音效代號" }],
+      "description": "播放音效"
+    }
+  ],
+  "variables": [
+    { "id": "met_warden", "type": "bool", "default": false, "description": "是否已與看守者對話" },
+    { "id": "resolve", "type": "number", "default": 0, "description": "決心值" }
+  ],
+  "characters": [
+    {
+      "id": "warden",
+      "name": { "zh": "看守者", "en": "The Warden" },
+      "defaultPortrait": "warden_neutral"
+    },
+    {
+      "id": "narrator",
+      "name": { "zh": "旁白", "en": "Narrator" }
+    }
+  ],
+  "scenes": [
+    {
+      "id": "01KYJCW9TK5KTA2ZM25PGHS8AA",
+      "name": "第一關開場",
+      "entryNodeId": "01KYJCW9TNZVMPJSWTW342D9DC",
+      "nodes": [
+        {
+          "id": "01KYJCW9TNZVMPJSWTW342D9DC",
+          "speaker": "narrator",
+          "text": {
+            "zh": "門在你身後闔上。[wait=0.6]走廊盡頭，有什麼在等著。",
+            "en": "The door closes behind you.[wait=0.6]Something waits at the end of the hall."
+          },
+          "choices": [],
+          "next": "01KYJCW9TNYY9THXSB8ZBDD9S5",
+          "actions": [],
+          "notes": "開場旁白，語氣平靜，不要驚悚化。"
+        },
+        {
+          "id": "01KYJCW9TNYY9THXSB8ZBDD9S5",
+          "speaker": "warden",
+          "portrait": "warden_neutral",
+          "text": {
+            "zh": "[speed=0.6]又一個。[wait=0.4][/speed]你以為換個顏色，就能[shake amp=3]活下來[/shake]嗎？",
+            "en": "[speed=0.6]Another one.[wait=0.4][/speed]You think changing colors will keep you [shake amp=3]alive[/shake]?"
+          },
+          "choices": [
+            {
+              "id": "01KYJCW9TN0K7ND0EMFVAMJ3BV",
+              "text": { "zh": "「我不是來活下來的。」", "en": "\"I'm not here to survive.\"" },
+              "targetNodeId": "01KYJCW9TNHDCA05D8XNFRB5X5"
+            },
+            {
+              "id": "01KYJCW9TNM0TN36Y0SCG90T8A",
+              "text": { "zh": "（沉默）", "en": "(Say nothing)" },
+              "targetNodeId": "01KYJCW9TPS2KPZHNXCA9AFENY"
+            }
+          ],
+          "next": null,
+          "actions": [{ "op": "set", "variable": "met_warden", "value": true }],
+          "notes": "第一次見到看守者。選項會影響 resolve。"
+        },
+        {
+          "id": "01KYJCW9TNHDCA05D8XNFRB5X5",
+          "speaker": "warden",
+          "portrait": "warden_amused",
+          "text": {
+            "zh": "[color=#ff3333]很好。[/color][wait=0.3]那就別讓我失望。",
+            "en": "[color=#ff3333]Good.[/color][wait=0.3]Then don't disappoint me."
+          },
+          "choices": [],
+          "next": "01KYJCW9TP2T9FWPBW6PZ6FDE1",
+          "actions": [{ "op": "add", "variable": "resolve", "value": 1 }],
+          "notes": "強硬回應分支。"
+        },
+        {
+          "id": "01KYJCW9TPS2KPZHNXCA9AFENY",
+          "speaker": "warden",
+          "portrait": "warden_neutral",
+          "text": {
+            "zh": "[i]……[/i][wait=0.8]沉默也是一種答案。",
+            "en": "[i]...[/i][wait=0.8]Silence is an answer too."
+          },
+          "choices": [],
+          "next": "01KYJCW9TP2T9FWPBW6PZ6FDE1",
+          "actions": [],
+          "notes": "沉默分支。"
+        },
+        {
+          "id": "01KYJCW9TP2T9FWPBW6PZ6FDE1",
+          "speaker": "narrator",
+          "text": {
+            "zh": "[sfx=boss_appear][size=1.8][wave]戰鬥開始[/wave][/size]",
+            "en": "[sfx=boss_appear][size=1.8][wave]The fight begins[/wave][/size]"
+          },
+          "choices": [],
+          "next": null,
+          "actions": [],
+          "notes": "兩條分支的匯流點，接進 Boss 戰。"
+        }
+      ]
+    }
+  ],
+  "exportSnapshot": null
+}

@@ -1,0 +1,31 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 實際作品的劇情內容不進版控。
+# 這個 repo 是公開的工具原始碼；劇本檔請放在 repo 之外。
+# samples/demo.story.json 是為了說明格式而寫的假資料，例外放行。
+*.xlsx
+*.story.json
+!samples/demo.story.json

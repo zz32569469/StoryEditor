@@ -1,0 +1,93 @@
+:root {
+  --bg: #14161a;
+  --bg-panel: #1c1f25;
+  --bg-input: #23262d;
+  --bg-hover: #2a2e36;
+  --border: #333842;
+  --text: #d6dae1;
+  --text-dim: #8b93a1;
+  --accent: #6ea8fe;
+  --danger: #e06c75;
+  --warn: #e5c07b;
+  --ok: #7fb37f;
+
+  color-scheme: dark;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button.primary {
+  background: #2f4f7d;
+  border-color: #3d6396;
+}
+
+button.danger {
+  color: var(--danger);
+}
+
+button.link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  padding: 0 4px;
+}
+
+input[type="text"],
+select,
+textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.6;
+  font-family: inherit;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 14px 0;
+}
