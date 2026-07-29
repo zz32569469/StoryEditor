@@ -3,6 +3,15 @@ import { dirname, resolve } from 'node:path';
 
 import { BUILTIN_FUNCTIONS, evaluate, type Value } from '../src/expr/evaluate';
 import { parseAssignment, parseExpression, parseInputTargets } from '../src/expr/parse';
+import {
+  advance,
+  choose,
+  startScene,
+  submitInput,
+  type PlayerState,
+  type PlayerStatus,
+} from '../src/runtime/player';
+import { FORMAT_VERSION, type StoryNode, type StoryProject } from '../src/schema/story';
 
 /**
  * 產生黃金測資：C# 端讀同一份跑一遍，結果不一致就是兩邊分歧。
@@ -224,17 +233,208 @@ const inputs: InputCase[] = [
   inputCase(''),
 ];
 
+// ---------------------------------------------------------------- 整場走訪
+
+type Step = ['advance'] | ['choose', string] | ['input', Record<string, Value>];
+
+interface Snapshot {
+  status: PlayerStatus;
+  nodeId: string | null;
+  error: string | null;
+  visited: string[];
+  pendingInputs: string[];
+  variables: Record<string, EncodedValue>;
+}
+
+interface PlaythroughCase {
+  name: string;
+  project: StoryProject;
+  sceneId: string;
+  initialVariables: Record<string, EncodedValue>;
+  steps: Step[];
+  /** 起點一個，之後每走一步一個。 */
+  snapshots: Snapshot[];
+}
+
+function snapshot(state: PlayerState): Snapshot {
+  const variables: Record<string, EncodedValue> = {};
+  for (const key of [...state.variables.keys()].sort()) {
+    variables[key] = encode(state.variables.get(key)!);
+  }
+  return {
+    status: state.status,
+    nodeId: state.nodeId,
+    error: state.error,
+    visited: [...state.visited],
+    pendingInputs: [...state.pendingInputs],
+    variables,
+  };
+}
+
+function playthrough(
+  name: string,
+  project: StoryProject,
+  sceneId: string,
+  steps: Step[],
+  initialVariables: Record<string, Value> = {},
+): PlaythroughCase {
+  let state = startScene(project, sceneId, { initialVariables });
+  const snapshots: Snapshot[] = [snapshot(state)];
+
+  for (const step of steps) {
+    if (step[0] === 'advance') state = advance(project, state);
+    else if (step[0] === 'choose') state = choose(project, state, step[1]);
+    else state = submitInput(project, state, step[1]);
+    snapshots.push(snapshot(state));
+  }
+
+  const encodedInitial: Record<string, EncodedValue> = {};
+  for (const [key, value] of Object.entries(initialVariables)) encodedInitial[key] = encode(value);
+
+  return { name, project, sceneId, initialVariables: encodedInitial, steps, snapshots };
+}
+
+/** 直接手刻節點：id 用可讀字串，測資壞掉時看得出是哪一句。 */
+function node(id: string, patch: Partial<StoryNode> = {}): StoryNode {
+  return {
+    id,
+    kind: 'line',
+    text: { zh: id },
+    choices: [],
+    next: null,
+    actions: [],
+    notes: '',
+    branches: [],
+    extras: {},
+    ...patch,
+  };
+}
+
+function project(nodes: StoryNode[], variables: StoryProject['variables'] = []): StoryProject {
+  return {
+    meta: {
+      formatVersion: FORMAT_VERSION,
+      projectName: '走訪測資',
+      languages: ['zh'],
+      baseLanguage: 'zh',
+      updatedAt: '',
+      tagSyntax: 'brace',
+    },
+    tagRegistry: [],
+    variables,
+    characters: [],
+    scenes: [{ id: 'scene', name: '測試', entryNodeId: nodes[0]?.id ?? null, nodes }],
+    exportSnapshot: null,
+  };
+}
+
+const linear = project([
+  node('a', { next: 'b' }),
+  node('b', { next: 'c' }),
+  node('c', { next: null }),
+]);
+
+const withChoices = project([
+  node('start', {
+    choices: [
+      { id: 'c1', text: { zh: '左' }, targetNodeId: 'left', extras: {} },
+      { id: 'c2', text: { zh: '右' }, targetNodeId: 'right', extras: {} },
+    ],
+  }),
+  node('left', { next: 'end' }),
+  node('right', { next: 'end' }),
+  node('end', { kind: 'end' }),
+]);
+
+const withBranch = project(
+  [
+    node('open', { next: 'check' }),
+    node('check', {
+      kind: 'branch',
+      branches: [
+        { id: 'b1', condition: 'composure >= 75', targetNodeId: 'calm', extras: {} },
+        { id: 'b2', condition: 'composure <= 74', targetNodeId: 'shaken', extras: {} },
+      ],
+    }),
+    node('calm', { next: null }),
+    node('shaken', { next: null }),
+  ],
+  [{ id: 'composure', type: 'number', default: 100, description: '' }],
+);
+
+const noBranchMatches = project(
+  [
+    node('open', { next: 'check' }),
+    node('check', {
+      kind: 'branch',
+      branches: [{ id: 'b1', condition: 'composure > 200', targetNodeId: 'never', extras: {} }],
+    }),
+    node('never'),
+  ],
+  [{ id: 'composure', type: 'number', default: 10, description: '' }],
+);
+
+const withSetAndInput = project(
+  [
+    node('ask', { kind: 'input', expression: 'firstName, playerAge', next: 'combine' }),
+    node('combine', { kind: 'set', expression: "fullName = '柚' + firstName", next: 'grow' }),
+    node('grow', { kind: 'set', expression: 'playerAge = playerAge + 1', next: 'done' }),
+    node('done', { next: null }),
+  ],
+  [
+    { id: 'firstName', type: 'string', default: '', description: '' },
+    { id: 'playerAge', type: 'number', default: 0, description: '' },
+    { id: 'fullName', type: 'string', default: '', description: '' },
+  ],
+);
+
+const brokenJump = project([node('only', { next: 'nowhere' })]);
+
+const infiniteLoop = project([
+  node('x', { kind: 'set', expression: 'n = n + 1', next: 'x' }),
+], [{ id: 'n', type: 'number', default: 0, description: '' }]);
+
+const playthroughs: PlaythroughCase[] = [
+  playthrough('線性推進到結束', linear, 'scene', [['advance'], ['advance'], ['advance']]),
+  playthrough('選左邊', withChoices, 'scene', [['choose', 'c1'], ['advance']]),
+  playthrough('選右邊', withChoices, 'scene', [['choose', 'c2'], ['advance']]),
+  playthrough('選了不存在的選項', withChoices, 'scene', [['choose', 'nope']]),
+  playthrough('分支走高值', withBranch, 'scene', [['advance']], { composure: 80 }),
+  playthrough('分支走低值', withBranch, 'scene', [['advance']], { composure: 10 }),
+  playthrough('分支邊界值 74', withBranch, 'scene', [['advance']], { composure: 74 }),
+  // 起點是 line 節點，settle 會立刻停下；要 advance 一次才真的走進 branch。
+  // 少了這一步，這個案例看起來有測、其實完全沒碰到分支邏輯。
+  playthrough('沒有條件成立', noBranchMatches, 'scene', [['advance']]),
+  playthrough('輸入與賦值', withSetAndInput, 'scene', [
+    ['input', { firstName: '葉', playerAge: '17' }],
+    ['advance'],
+  ]),
+  playthrough('數字型別的輸入不吃前導零', withSetAndInput, 'scene', [
+    ['input', { firstName: '00812', playerAge: '25' }],
+  ]),
+  playthrough('跳轉指向不存在的節點', brokenJump, 'scene', [['advance']]),
+  playthrough('無限迴圈會被擋下', infiniteLoop, 'scene', []),
+  playthrough('找不到場景', linear, 'nope', []),
+];
+
 // ---------------------------------------------------------------- 輸出
 
 mkdirSync(OUT, { recursive: true });
-const payload = { version: 1, expressions, assignments, inputs };
-const file = resolve(OUT, 'expressions.json');
-mkdirSync(dirname(file), { recursive: true });
-writeFileSync(file, JSON.stringify(payload, null, 2));
+
+function write(name: string, payload: unknown): string {
+  const file = resolve(OUT, name);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(file, JSON.stringify(payload, null, 2));
+  return file;
+}
+
+write('expressions.json', { version: 1, expressions, assignments, inputs });
+write('playthroughs.json', { version: 1, playthroughs });
 
 console.log(
-  `已寫出 ${file}\n` +
+  `已寫出 ${OUT}\n` +
     `  運算式 ${expressions.length}（其中解析失敗 ${expressions.filter((c) => c.parseError).length}、` +
     `求值失敗 ${expressions.filter((c) => c.evalError).length}）\n` +
-    `  賦值 ${assignments.length}、輸入節點 ${inputs.length}`,
+    `  賦值 ${assignments.length}、輸入節點 ${inputs.length}\n` +
+    `  整場走訪 ${playthroughs.length}，共 ${playthroughs.reduce((n, p) => n + p.snapshots.length, 0)} 個快照`,
 );
