@@ -81,6 +81,16 @@ export function truthy(value: Value): boolean {
   return value !== '';
 }
 
+/** 把 `YYYY-MM-DD` 拆成數字，不建立 Date 物件（避免時區介入）。 */
+function parseDateParts(text: string): { year: number; month: number; day: number } | null {
+  if (!DATE_PATTERN.test(text)) return null;
+  return {
+    year: Number(text.slice(0, 4)),
+    month: Number(text.slice(5, 7)),
+    day: Number(text.slice(8, 10)),
+  };
+}
+
 /** 預設函式庫。遊戲特有的函式由呼叫端補上。 */
 export const BUILTIN_FUNCTIONS: Record<string, HostFunction> = {
   Max: { arity: -1, returns: 'number', params: ['number'], description: '取最大值', call: (args) => Math.max(...args.map(Number)) },
@@ -108,13 +118,20 @@ export const BUILTIN_FUNCTIONS: Record<string, HostFunction> = {
     returns: 'number',
     params: ['date', 'date'],
     description: '（預覽暫代）由出生日與基準日算出年齡',
+    /**
+     * 純日期運算，刻意不經過 Date。
+     *
+     * `new Date('2000-03-15')` 是以 UTC 解析的，但 getFullYear／getMonth／getDate
+     * 讀的是**本地時區** —— 在 UTC 以西的地方日期會退一天，跨月時就會少算一歲。
+     * 年齡不該因為玩家在哪個時區而不同，Unity 端也是照這個規則實作。
+     */
     call: (args) => {
-      const birth = new Date(String(args[0]));
-      const at = new Date(String(args[1]));
-      if (Number.isNaN(birth.getTime()) || Number.isNaN(at.getTime())) return 0;
-      let age = at.getFullYear() - birth.getFullYear();
-      const monthDiff = at.getMonth() - birth.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && at.getDate() < birth.getDate())) age -= 1;
+      const birth = parseDateParts(String(args[0]));
+      const at = parseDateParts(String(args[1]));
+      if (!birth || !at) return 0;
+
+      let age = at.year - birth.year;
+      if (at.month < birth.month || (at.month === birth.month && at.day < birth.day)) age -= 1;
       return Math.max(0, age);
     },
   },

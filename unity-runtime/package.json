@@ -1,0 +1,13 @@
+{
+  "name": "com.namake.story-runtime",
+  "version": "0.1.0",
+  "displayName": "Story Runtime",
+  "description": "播放 StoryEditor 匯出的 .story.json：運算式求值、特效標記解析、對話流程狀態機。核心層不引用 UnityEngine，行為以黃金測資與網頁編輯器對齊。",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
+  "author": {
+    "name": "nAmAkE"
+  }
+}

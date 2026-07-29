@@ -29,3 +29,7 @@ dist-ssr
 *.xlsx
 *.story.json
 !samples/demo.story.json
+
+# .NET 測試專案的建置產物（核心層原始碼在 unity-runtime/，這裡只是編譯出口）
+tools/csharp/**/bin/
+tools/csharp/**/obj/
