@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",
+    "@xyflow/react": "^12.11.2",
     "exceljs": "^4.4.0",
     "immer": "^11.1.15",
     "react": "^19.2.7",

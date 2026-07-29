@@ -1,0 +1,215 @@
+/* 流程圖。React Flow 只載 base.css（純排版），配色全部在這裡自己來。 */
+
+.flow-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 8px;
+}
+
+.flow-empty {
+  color: var(--text-dim);
+  padding: 20px;
+}
+
+/* ---------- 上方摘要列 ---------- */
+
+.flow-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.flow-bar b {
+  color: var(--text);
+}
+
+.flow-bar .is-warn {
+  color: var(--warn);
+}
+
+.flow-bar .is-error {
+  color: var(--danger);
+}
+
+.flow-legend {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.flow-legend i {
+  width: 14px;
+  height: 2px;
+  margin-left: 8px;
+}
+
+/* ---------- 畫布 ---------- */
+
+.flow-canvas {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.flow-canvas .react-flow__controls button {
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  fill: var(--text);
+}
+
+.flow-canvas .react-flow__controls button:hover {
+  background: var(--bg-hover);
+}
+
+.flow-canvas .react-flow__minimap {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* 把手只是連線的錨點，唯讀圖上不該看得到。 */
+.flow-canvas .react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---------- 方塊 ---------- */
+
+.flow-node {
+  width: 260px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--text-dim);
+  border-radius: 6px;
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.flow-node--choices {
+  border-left-color: var(--accent);
+}
+
+.flow-node--branch {
+  border-left-color: var(--warn);
+}
+
+.flow-node--set,
+.flow-node--input {
+  border-left-color: #a385d6;
+}
+
+.flow-node--end {
+  border-left-color: var(--ok);
+}
+
+.flow-node.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgb(110 168 254 / 35%);
+}
+
+/* 走不到的段落要一眼看得出來 —— 這是流程圖最值錢的用途之一。 */
+.flow-node.is-unreachable {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.flow-node-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--bg-input);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.flow-count {
+  color: var(--text-dim);
+}
+
+.flow-flags {
+  margin-left: auto;
+  display: flex;
+  gap: 5px;
+}
+
+.flow-flags b {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.flow-flags b.is-warn {
+  color: var(--warn);
+}
+
+.flow-flags b.is-error {
+  color: var(--danger);
+}
+
+/* ---------- 內容 ---------- */
+
+.flow-node button {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.flow-node button:hover {
+  background: var(--bg-hover);
+}
+
+.flow-node em {
+  color: var(--text-dim);
+  font-style: normal;
+}
+
+.flow-summary {
+  /* 摺疊時固定兩行，方塊高度才跟排版算出來的一致。 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.flow-lines {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.flow-lines button.is-active {
+  background: rgb(110 168 254 / 18%);
+}
+
+.flow-more {
+  border-top: 1px solid var(--border) !important;
+  color: var(--text-dim) !important;
+  font-size: 11px !important;
+}
+
+.flow-terminal {
+  padding: 4px 8px;
+  border-top: 1px solid var(--border);
+  color: var(--ok);
+  font-size: 11px;
+}
