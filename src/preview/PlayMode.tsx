@@ -29,6 +29,15 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [showVariables, setShowVariables] = useState(false);
 
+  /**
+   * 使用者在面板上改過的變數值，重播時要留著。
+   *
+   * 少了這個，「改變數試不同分支」對**開頭就分岔**的場景根本做不到：
+   * 設好值一按重新開始就被清回預設，只能趕在第一句時手動改。
+   * 實際劇本就有這種場景（MQ-9 的第二列就是三選一的條件判斷）。
+   */
+  const [overrides, setOverrides] = useState<Record<string, Value>>({});
+
   const base = project.meta.baseLanguage;
   const node = currentNode(project, state);
 
@@ -42,8 +51,9 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
     ? project.characters.find((c) => c.id === node.speaker)
     : undefined;
 
-  const restart = () => {
-    setState(startScene(project, scene.id));
+  const restart = (keepOverrides = true) => {
+    if (!keepOverrides) setOverrides({});
+    setState(startScene(project, scene.id, { initialVariables: keepOverrides ? overrides : {} }));
     setInputs({});
   };
 
@@ -72,13 +82,17 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
 
   /** 讓使用者當場改變數，測試不同分支。 */
   const setVariable = (id: string, raw: string) => {
+    const declared = project.variables.find((v) => v.id === id);
+    let value: Value = raw;
+    // 日期維持字串 —— 它在執行期就是字串，轉成數字會讓 CalcAge 失效。
+    if (declared?.type === 'number') value = Number(raw) || 0;
+    else if (declared?.type === 'bool') value = raw === 'true';
+
+    // 兩個狀態都要更新，而且不能把 setOverrides 塞進 setState 的 updater 裡 ——
+    // updater 必須是純函式，StrictMode 下會被呼叫兩次。
+    setOverrides((current) => ({ ...current, [id]: value }));
     setState((previous) => {
       const variables = new Map(previous.variables);
-      const declared = project.variables.find((v) => v.id === id);
-      let value: Value = raw;
-      // 日期維持字串 —— 它在執行期就是字串，轉成數字會讓 CalcAge 失效。
-      if (declared?.type === 'number') value = Number(raw) || 0;
-      else if (declared?.type === 'bool') value = raw === 'true';
       variables.set(id, value);
       return { ...previous, variables };
     });
@@ -95,7 +109,7 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
       <div className="play-bar">
         <strong>▶ 播放中</strong>
         <span className="play-scene">{scene.name}</span>
-        <button type="button" onClick={restart}>
+        <button type="button" onClick={() => restart()}>
           ↺ 重新開始
         </button>
         <button type="button" onClick={() => setShowVariables((v) => !v)}>
@@ -127,7 +141,18 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
               </label>
             );
           })}
-          <p className="hint">標記 * 的變數劇本只讀不寫，實際遊戲中由程式提供。改這裡可以試不同分支。</p>
+          <p className="hint">
+            標記 * 的變數劇本只讀不寫，實際遊戲中由程式提供。改這裡可以試不同分支；
+            改過的值<b>重新開始後會留著</b>，這樣才試得到開頭就分岔的場景。
+            {Object.keys(overrides).length > 0 && (
+              <>
+                {' '}
+                <button type="button" className="link" onClick={() => restart(false)}>
+                  回到預設值重播
+                </button>
+              </>
+            )}
+          </p>
         </div>
       )}
 
@@ -142,7 +167,7 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
           <div className="play-ended">
             <p>▪ 劇情結束</p>
             <p className="hint">走過 {state.visited.length} 個節點。</p>
-            <button type="button" onClick={restart}>
+            <button type="button" onClick={() => restart()}>
               ↺ 再跑一次
             </button>
           </div>

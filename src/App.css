@@ -774,6 +774,22 @@ textarea::placeholder {
   margin: 0;
 }
 
+.hint b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* 夾在說明文字裡的次要動作，不該長得像按鈕搶走注意力。 */
+button.link {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .node-id {
   color: #555b66;
   font-size: 10px;
