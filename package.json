@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b",
     "gen:schema": "tsx scripts/gen-json-schema.ts",
-    "convert": "tsx scripts/convert-legacy.ts"
+    "convert": "tsx scripts/convert-legacy.ts",
+    "analyze": "tsx scripts/analyze.ts",
+    "check:roundtrip": "tsx scripts/check-roundtrip.ts"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",

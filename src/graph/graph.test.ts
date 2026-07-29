@@ -246,6 +246,29 @@ describe('排版', () => {
     expect(placed.find((p) => p.id === 'c')!.y).toBe(2 * (NODE_HEIGHT + 56));
   });
 
+  it('支線匯合後主線回到原本的直行，不會一路往右漂', () => {
+    // 分岔再匯合。若匯合點跟著右邊那條支線走，主線每經過一次分岔就退一格，
+    // 整張圖會沿對角線往右下漂掉 —— 實際劇本一個場景有十幾個分岔點，
+    // 累積起來就完全看不出主線在哪。
+    const nodes = [
+      node('q', {
+        choices: [
+          { id: 'c1', text: { zh: '左' }, targetNodeId: 'left', extras: {} },
+          { id: 'c2', text: { zh: '右' }, targetNodeId: 'right', extras: {} },
+        ],
+      }),
+      node('left', { next: 'merge' }),
+      node('right', { next: 'merge' }),
+      node('merge', { kind: 'end' }),
+    ];
+
+    const { blocks, edges } = build(nodes);
+    const placed = layoutGraph(blocks, edges);
+    const at = (id: string) => placed.find((p) => p.id === id)!;
+
+    expect(at('merge').x).toBe(at('q').x);
+  });
+
   it('往前跳很遠時，長鏈仍決定層數，不會把後面的段落拉上來', () => {
     const nodes = chain('a', 'b', 'c', 'd');
     // a 同時也直接跳到 d。
