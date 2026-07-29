@@ -1,0 +1,2712 @@
+{
+  "version": 1,
+  "playthroughs": [
+    {
+      "name": "線性推進到結束",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "a",
+            "nodes": [
+              {
+                "id": "a",
+                "kind": "line",
+                "text": {
+                  "zh": "a"
+                },
+                "choices": [],
+                "next": "b",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "b",
+                "kind": "line",
+                "text": {
+                  "zh": "b"
+                },
+                "choices": [],
+                "next": "c",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "c",
+                "kind": "line",
+                "text": {
+                  "zh": "c"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "advance"
+        ],
+        [
+          "advance"
+        ],
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "a",
+          "error": null,
+          "visited": [
+            "a"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "line",
+          "nodeId": "b",
+          "error": null,
+          "visited": [
+            "a",
+            "b"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "line",
+          "nodeId": "c",
+          "error": null,
+          "visited": [
+            "a",
+            "b",
+            "c"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "ended",
+          "nodeId": null,
+          "error": null,
+          "visited": [
+            "a",
+            "b",
+            "c"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "name": "選左邊",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "start",
+            "nodes": [
+              {
+                "id": "start",
+                "kind": "line",
+                "text": {
+                  "zh": "start"
+                },
+                "choices": [
+                  {
+                    "id": "c1",
+                    "text": {
+                      "zh": "左"
+                    },
+                    "targetNodeId": "left",
+                    "extras": {}
+                  },
+                  {
+                    "id": "c2",
+                    "text": {
+                      "zh": "右"
+                    },
+                    "targetNodeId": "right",
+                    "extras": {}
+                  }
+                ],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "left",
+                "kind": "line",
+                "text": {
+                  "zh": "left"
+                },
+                "choices": [],
+                "next": "end",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "right",
+                "kind": "line",
+                "text": {
+                  "zh": "right"
+                },
+                "choices": [],
+                "next": "end",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "end",
+                "kind": "end",
+                "text": {
+                  "zh": "end"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "choose",
+          "c1"
+        ],
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "choices",
+          "nodeId": "start",
+          "error": null,
+          "visited": [
+            "start"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "line",
+          "nodeId": "left",
+          "error": null,
+          "visited": [
+            "start",
+            "left"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "ended",
+          "nodeId": "end",
+          "error": null,
+          "visited": [
+            "start",
+            "left",
+            "end"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "name": "選右邊",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "start",
+            "nodes": [
+              {
+                "id": "start",
+                "kind": "line",
+                "text": {
+                  "zh": "start"
+                },
+                "choices": [
+                  {
+                    "id": "c1",
+                    "text": {
+                      "zh": "左"
+                    },
+                    "targetNodeId": "left",
+                    "extras": {}
+                  },
+                  {
+                    "id": "c2",
+                    "text": {
+                      "zh": "右"
+                    },
+                    "targetNodeId": "right",
+                    "extras": {}
+                  }
+                ],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "left",
+                "kind": "line",
+                "text": {
+                  "zh": "left"
+                },
+                "choices": [],
+                "next": "end",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "right",
+                "kind": "line",
+                "text": {
+                  "zh": "right"
+                },
+                "choices": [],
+                "next": "end",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "end",
+                "kind": "end",
+                "text": {
+                  "zh": "end"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "choose",
+          "c2"
+        ],
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "choices",
+          "nodeId": "start",
+          "error": null,
+          "visited": [
+            "start"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "line",
+          "nodeId": "right",
+          "error": null,
+          "visited": [
+            "start",
+            "right"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "ended",
+          "nodeId": "end",
+          "error": null,
+          "visited": [
+            "start",
+            "right",
+            "end"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "name": "選了不存在的選項",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "start",
+            "nodes": [
+              {
+                "id": "start",
+                "kind": "line",
+                "text": {
+                  "zh": "start"
+                },
+                "choices": [
+                  {
+                    "id": "c1",
+                    "text": {
+                      "zh": "左"
+                    },
+                    "targetNodeId": "left",
+                    "extras": {}
+                  },
+                  {
+                    "id": "c2",
+                    "text": {
+                      "zh": "右"
+                    },
+                    "targetNodeId": "right",
+                    "extras": {}
+                  }
+                ],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "left",
+                "kind": "line",
+                "text": {
+                  "zh": "left"
+                },
+                "choices": [],
+                "next": "end",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "right",
+                "kind": "line",
+                "text": {
+                  "zh": "right"
+                },
+                "choices": [],
+                "next": "end",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "end",
+                "kind": "end",
+                "text": {
+                  "zh": "end"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "choose",
+          "nope"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "choices",
+          "nodeId": "start",
+          "error": null,
+          "visited": [
+            "start"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "error",
+          "nodeId": "start",
+          "error": "找不到選項 nope",
+          "visited": [
+            "start"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "name": "分支走高值",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "composure",
+            "type": "number",
+            "default": 100,
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "open",
+            "nodes": [
+              {
+                "id": "open",
+                "kind": "line",
+                "text": {
+                  "zh": "open"
+                },
+                "choices": [],
+                "next": "check",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "check",
+                "kind": "branch",
+                "text": {
+                  "zh": "check"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [
+                  {
+                    "id": "b1",
+                    "condition": "composure >= 75",
+                    "targetNodeId": "calm",
+                    "extras": {}
+                  },
+                  {
+                    "id": "b2",
+                    "condition": "composure <= 74",
+                    "targetNodeId": "shaken",
+                    "extras": {}
+                  }
+                ],
+                "extras": {}
+              },
+              {
+                "id": "calm",
+                "kind": "line",
+                "text": {
+                  "zh": "calm"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "shaken",
+                "kind": "line",
+                "text": {
+                  "zh": "shaken"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {
+        "composure": {
+          "type": "number",
+          "value": 80,
+          "display": "80"
+        }
+      },
+      "steps": [
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "open",
+          "error": null,
+          "visited": [
+            "open"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 80,
+              "display": "80"
+            }
+          }
+        },
+        {
+          "status": "line",
+          "nodeId": "calm",
+          "error": null,
+          "visited": [
+            "open",
+            "check",
+            "calm"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 80,
+              "display": "80"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "分支走低值",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "composure",
+            "type": "number",
+            "default": 100,
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "open",
+            "nodes": [
+              {
+                "id": "open",
+                "kind": "line",
+                "text": {
+                  "zh": "open"
+                },
+                "choices": [],
+                "next": "check",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "check",
+                "kind": "branch",
+                "text": {
+                  "zh": "check"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [
+                  {
+                    "id": "b1",
+                    "condition": "composure >= 75",
+                    "targetNodeId": "calm",
+                    "extras": {}
+                  },
+                  {
+                    "id": "b2",
+                    "condition": "composure <= 74",
+                    "targetNodeId": "shaken",
+                    "extras": {}
+                  }
+                ],
+                "extras": {}
+              },
+              {
+                "id": "calm",
+                "kind": "line",
+                "text": {
+                  "zh": "calm"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "shaken",
+                "kind": "line",
+                "text": {
+                  "zh": "shaken"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {
+        "composure": {
+          "type": "number",
+          "value": 10,
+          "display": "10"
+        }
+      },
+      "steps": [
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "open",
+          "error": null,
+          "visited": [
+            "open"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            }
+          }
+        },
+        {
+          "status": "line",
+          "nodeId": "shaken",
+          "error": null,
+          "visited": [
+            "open",
+            "check",
+            "shaken"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "分支邊界值 74",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "composure",
+            "type": "number",
+            "default": 100,
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "open",
+            "nodes": [
+              {
+                "id": "open",
+                "kind": "line",
+                "text": {
+                  "zh": "open"
+                },
+                "choices": [],
+                "next": "check",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "check",
+                "kind": "branch",
+                "text": {
+                  "zh": "check"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [
+                  {
+                    "id": "b1",
+                    "condition": "composure >= 75",
+                    "targetNodeId": "calm",
+                    "extras": {}
+                  },
+                  {
+                    "id": "b2",
+                    "condition": "composure <= 74",
+                    "targetNodeId": "shaken",
+                    "extras": {}
+                  }
+                ],
+                "extras": {}
+              },
+              {
+                "id": "calm",
+                "kind": "line",
+                "text": {
+                  "zh": "calm"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "shaken",
+                "kind": "line",
+                "text": {
+                  "zh": "shaken"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {
+        "composure": {
+          "type": "number",
+          "value": 74,
+          "display": "74"
+        }
+      },
+      "steps": [
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "open",
+          "error": null,
+          "visited": [
+            "open"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 74,
+              "display": "74"
+            }
+          }
+        },
+        {
+          "status": "line",
+          "nodeId": "shaken",
+          "error": null,
+          "visited": [
+            "open",
+            "check",
+            "shaken"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 74,
+              "display": "74"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "沒有條件成立",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "composure",
+            "type": "number",
+            "default": 10,
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "open",
+            "nodes": [
+              {
+                "id": "open",
+                "kind": "line",
+                "text": {
+                  "zh": "open"
+                },
+                "choices": [],
+                "next": "check",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "check",
+                "kind": "branch",
+                "text": {
+                  "zh": "check"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [
+                  {
+                    "id": "b1",
+                    "condition": "composure > 200",
+                    "targetNodeId": "never",
+                    "extras": {}
+                  }
+                ],
+                "extras": {}
+              },
+              {
+                "id": "never",
+                "kind": "line",
+                "text": {
+                  "zh": "never"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "open",
+          "error": null,
+          "visited": [
+            "open"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            }
+          }
+        },
+        {
+          "status": "error",
+          "nodeId": "check",
+          "error": "分支沒有任何條件成立：composure > 200",
+          "visited": [
+            "open",
+            "check"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "composure": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "輸入與賦值",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "firstName",
+            "type": "string",
+            "default": "",
+            "description": ""
+          },
+          {
+            "id": "playerAge",
+            "type": "number",
+            "default": 0,
+            "description": ""
+          },
+          {
+            "id": "fullName",
+            "type": "string",
+            "default": "",
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "ask",
+            "nodes": [
+              {
+                "id": "ask",
+                "kind": "input",
+                "text": {
+                  "zh": "ask"
+                },
+                "choices": [],
+                "next": "combine",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "firstName, playerAge"
+              },
+              {
+                "id": "combine",
+                "kind": "set",
+                "text": {
+                  "zh": "combine"
+                },
+                "choices": [],
+                "next": "grow",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "fullName = '柚' + firstName"
+              },
+              {
+                "id": "grow",
+                "kind": "set",
+                "text": {
+                  "zh": "grow"
+                },
+                "choices": [],
+                "next": "done",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "playerAge = playerAge + 1"
+              },
+              {
+                "id": "done",
+                "kind": "line",
+                "text": {
+                  "zh": "done"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "input",
+          {
+            "firstName": "葉",
+            "playerAge": "17"
+          }
+        ],
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "input",
+          "nodeId": "ask",
+          "error": null,
+          "visited": [
+            "ask"
+          ],
+          "pendingInputs": [
+            "firstName",
+            "playerAge"
+          ],
+          "variables": {
+            "firstName": {
+              "type": "string",
+              "value": "",
+              "display": ""
+            },
+            "fullName": {
+              "type": "string",
+              "value": "",
+              "display": ""
+            },
+            "playerAge": {
+              "type": "number",
+              "value": 0,
+              "display": "0"
+            }
+          }
+        },
+        {
+          "status": "line",
+          "nodeId": "done",
+          "error": null,
+          "visited": [
+            "ask",
+            "combine",
+            "grow",
+            "done"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "firstName": {
+              "type": "string",
+              "value": "葉",
+              "display": "葉"
+            },
+            "fullName": {
+              "type": "string",
+              "value": "柚葉",
+              "display": "柚葉"
+            },
+            "playerAge": {
+              "type": "number",
+              "value": 18,
+              "display": "18"
+            }
+          }
+        },
+        {
+          "status": "ended",
+          "nodeId": null,
+          "error": null,
+          "visited": [
+            "ask",
+            "combine",
+            "grow",
+            "done"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "firstName": {
+              "type": "string",
+              "value": "葉",
+              "display": "葉"
+            },
+            "fullName": {
+              "type": "string",
+              "value": "柚葉",
+              "display": "柚葉"
+            },
+            "playerAge": {
+              "type": "number",
+              "value": 18,
+              "display": "18"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "數字型別的輸入不吃前導零",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "firstName",
+            "type": "string",
+            "default": "",
+            "description": ""
+          },
+          {
+            "id": "playerAge",
+            "type": "number",
+            "default": 0,
+            "description": ""
+          },
+          {
+            "id": "fullName",
+            "type": "string",
+            "default": "",
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "ask",
+            "nodes": [
+              {
+                "id": "ask",
+                "kind": "input",
+                "text": {
+                  "zh": "ask"
+                },
+                "choices": [],
+                "next": "combine",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "firstName, playerAge"
+              },
+              {
+                "id": "combine",
+                "kind": "set",
+                "text": {
+                  "zh": "combine"
+                },
+                "choices": [],
+                "next": "grow",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "fullName = '柚' + firstName"
+              },
+              {
+                "id": "grow",
+                "kind": "set",
+                "text": {
+                  "zh": "grow"
+                },
+                "choices": [],
+                "next": "done",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "playerAge = playerAge + 1"
+              },
+              {
+                "id": "done",
+                "kind": "line",
+                "text": {
+                  "zh": "done"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "input",
+          {
+            "firstName": "00812",
+            "playerAge": "25"
+          }
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "input",
+          "nodeId": "ask",
+          "error": null,
+          "visited": [
+            "ask"
+          ],
+          "pendingInputs": [
+            "firstName",
+            "playerAge"
+          ],
+          "variables": {
+            "firstName": {
+              "type": "string",
+              "value": "",
+              "display": ""
+            },
+            "fullName": {
+              "type": "string",
+              "value": "",
+              "display": ""
+            },
+            "playerAge": {
+              "type": "number",
+              "value": 0,
+              "display": "0"
+            }
+          }
+        },
+        {
+          "status": "line",
+          "nodeId": "done",
+          "error": null,
+          "visited": [
+            "ask",
+            "combine",
+            "grow",
+            "done"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "firstName": {
+              "type": "string",
+              "value": "00812",
+              "display": "00812"
+            },
+            "fullName": {
+              "type": "string",
+              "value": "柚00812",
+              "display": "柚00812"
+            },
+            "playerAge": {
+              "type": "number",
+              "value": 26,
+              "display": "26"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "跳轉指向不存在的節點",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "only",
+            "nodes": [
+              {
+                "id": "only",
+                "kind": "line",
+                "text": {
+                  "zh": "only"
+                },
+                "choices": [],
+                "next": "nowhere",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "advance"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "only",
+          "error": null,
+          "visited": [
+            "only"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        },
+        {
+          "status": "error",
+          "nodeId": "nowhere",
+          "error": "找不到節點 nowhere",
+          "visited": [
+            "only"
+          ],
+          "pendingInputs": [],
+          "variables": {}
+        }
+      ]
+    },
+    {
+      "name": "無限迴圈會被擋下",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "n",
+            "type": "number",
+            "default": 0,
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "x",
+            "nodes": [
+              {
+                "id": "x",
+                "kind": "set",
+                "text": {
+                  "zh": "x"
+                },
+                "choices": [],
+                "next": "x",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "n = n + 1"
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [],
+      "snapshots": [
+        {
+          "status": "error",
+          "nodeId": "x",
+          "error": "連續處理超過 1000 個節點，可能有無限迴圈",
+          "visited": [
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x",
+            "x"
+          ],
+          "pendingInputs": [],
+          "variables": {
+            "n": {
+              "type": "number",
+              "value": 1000,
+              "display": "1000"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "找不到場景",
+      "project": {
+        "meta": {
+          "formatVersion": "1.3.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "a",
+            "nodes": [
+              {
+                "id": "a",
+                "kind": "line",
+                "text": {
+                  "zh": "a"
+                },
+                "choices": [],
+                "next": "b",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "b",
+                "kind": "line",
+                "text": {
+                  "zh": "b"
+                },
+                "choices": [],
+                "next": "c",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "c",
+                "kind": "line",
+                "text": {
+                  "zh": "c"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "nope",
+      "initialVariables": {},
+      "steps": [],
+      "snapshots": [
+        {
+          "status": "error",
+          "nodeId": null,
+          "error": "找不到場景 nope",
+          "visited": [],
+          "pendingInputs": [],
+          "variables": {}
+        }
+      ]
+    }
+  ]
+}

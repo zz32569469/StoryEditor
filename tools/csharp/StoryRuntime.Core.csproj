@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    這個 csproj 不是套件的一部分，它只是讓核心層能在 Unity 之外被編譯與測試。
+    原始碼的唯一位置是 unity-runtime/Runtime/。
+
+    刻意鎖 netstandard2.1（Unity 的 API 相容層級）：在這裡編得過，
+    在 Unity 裡就編得過。少了這道限制，很容易寫出只有新版 .NET 才有的 API，
+    等搬進 Unity 才發現。
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <AssemblyName>StoryRuntime</AssemblyName>
+    <RootNamespace>StoryRuntime</RootNamespace>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../unity-runtime/Runtime/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>

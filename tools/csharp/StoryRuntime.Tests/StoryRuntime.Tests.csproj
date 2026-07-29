@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../StoryRuntime.Core.csproj" />
+  </ItemGroup>
+
+  <!-- 黃金測資由 TS 端產生，是兩邊唯一的共同事實來源。 -->
+  <ItemGroup>
+    <None Include="../../../unity-runtime/Tests~/golden/*.json" CopyToOutputDirectory="PreserveNewest" LinkBase="golden" />
+  </ItemGroup>
+
+</Project>

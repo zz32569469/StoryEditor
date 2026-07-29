@@ -13,6 +13,7 @@
     "typecheck": "tsc -b",
     "gen:schema": "tsx scripts/gen-json-schema.ts",
     "convert": "tsx scripts/convert-legacy.ts",
+    "gen:golden": "tsx scripts/gen-golden.ts",
     "analyze": "tsx scripts/analyze.ts",
     "check:roundtrip": "tsx scripts/check-roundtrip.ts"
   },
