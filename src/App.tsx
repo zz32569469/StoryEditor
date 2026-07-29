@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { CharacterPanel } from './editor/CharacterPanel';
 import { ImportReport } from './editor/ImportReport';
@@ -15,6 +16,7 @@ import { DialogueStage } from './preview/DialogueStage';
 import { KIND_LABEL } from './editor/nodeKind';
 import { checkReferences, validateStoryProject } from './schema/validate';
 import { useEditor } from './state/store';
+import { usePopoutWindow } from './ui/usePopoutWindow';
 import { useSplitPane } from './ui/useSplitPane';
 import { defaultDecisions, mergeCells, resolveAccepted, type MergeReport } from './sync/merge';
 
@@ -53,6 +55,7 @@ export default function App() {
   const { containerRef, width: paneWidth, isResizing, resizerProps, resetWidth } = useSplitPane();
   const [tab, setTab] = useState<Tab>('dialogue');
   const [view, setView] = useState<View>('preview');
+  const graphWindow = usePopoutWindow('流程圖 — 劇情編輯器');
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [status, setStatus] = useState('');
   const projectFileRef = useRef<HTMLInputElement>(null);
@@ -305,15 +308,38 @@ export default function App() {
             </button>
             <button
               type="button"
-              className={view === 'graph' ? 'is-active' : ''}
+              className={view === 'graph' && !graphWindow.isOpen ? 'is-active' : ''}
+              disabled={graphWindow.isOpen}
               onClick={() => setView('graph')}
               title="看這個場景的分支結構"
             >
               流程圖
             </button>
+
+            {graphWindow.isOpen ? (
+              <button type="button" className="link" onClick={graphWindow.close}>
+                ⇲ 收回流程圖
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="link"
+                title="把流程圖搬到獨立視窗，可以拉到另一個螢幕邊看邊改"
+                onClick={() => {
+                  if (graphWindow.open()) {
+                    // 搬出去之後左邊留給預覽 —— 不然兩邊會顯示同一張圖。
+                    setView('preview');
+                  } else {
+                    setStatus('瀏覽器擋下了彈出視窗。請允許這個網站開啟彈出視窗後再試一次。');
+                  }
+                }}
+              >
+                ⇱ 另開視窗
+              </button>
+            )}
           </nav>
 
-          {view === 'preview' ? (
+          {view === 'preview' || graphWindow.isOpen ? (
             <DialogueStage />
           ) : (
             <Suspense fallback={<p className="loading-hint">載入流程圖…</p>}>
@@ -397,6 +423,16 @@ export default function App() {
           e.target.value = '';
         }}
       />
+
+      {/* 副視窗的內容仍在這棵 React tree 裡，所以它讀的是同一個 store ——
+          主視窗一改，那邊立刻跟著變，中間沒有任何同步邏輯。 */}
+      {graphWindow.container &&
+        createPortal(
+          <Suspense fallback={<p className="loading-hint">載入流程圖…</p>}>
+            <FlowGraph />
+          </Suspense>,
+          graphWindow.container,
+        )}
 
       {pendingImport && (
         <ImportReport

@@ -176,6 +176,15 @@
   color: var(--text-dim);
 }
 
+/* 副視窗的掛載點。那邊沒有工具列，圖直接佔滿整個視窗。 */
+.popout-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px;
+  background: var(--bg);
+}
+
 /* ---------- 台詞畫面 ---------- */
 
 .stage {
