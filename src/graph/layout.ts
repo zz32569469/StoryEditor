@@ -54,8 +54,12 @@ function rankBlocks(blocks: GraphBlock[], edges: GraphEdge[]): Map<string, numbe
 /**
  * 決定每一塊的橫向位置。
  *
- * 每一塊優先沿用「把它拉到這一層的那個前驅」的欄位，讓主線維持在同一直行；
- * 該欄已經被佔走時才往右挪。這樣分岔出去的支線會自然落在主線右邊。
+ * 每一塊優先沿用**最左邊那個前驅**的欄位，該欄被佔走時才往右挪。
+ *
+ * 關鍵在「最左」而不是「主要前驅」：分岔出去的支線會落在主線右邊，而支線
+ * 匯合回來時，若讓匯合點跟著右邊那條走，主線就永遠回不到原本的直行 ——
+ * 每經過一次分岔就往右退一格，整張圖會沿對角線往右下漂掉。
+ * 取最左邊的前驅，主線在每次匯合後都會被拉回來。
  */
 function assignLanes(
   blocks: GraphBlock[],
@@ -63,14 +67,10 @@ function assignLanes(
   rank: Map<string, number>,
 ): Map<string, number> {
   const orderOf = new Map(blocks.map((b) => [b.id, b.order]));
-  const primary = new Map<string, string>();
+  const predecessors = new Map<string, string[]>();
   for (const edge of edges) {
     if ((orderOf.get(edge.source) ?? 0) >= (orderOf.get(edge.target) ?? 0)) continue;
-    // 主前驅 = 讓它排到這一層的那一個，也就是層數最高的前驅。
-    const current = primary.get(edge.target);
-    if (current === undefined || (rank.get(edge.source) ?? 0) > (rank.get(current) ?? 0)) {
-      primary.set(edge.target, edge.source);
-    }
+    predecessors.set(edge.target, [...(predecessors.get(edge.target) ?? []), edge.source]);
   }
 
   const lane = new Map<string, number>();
@@ -83,7 +83,10 @@ function assignLanes(
   for (const block of sorted) {
     const row = rank.get(block.id) ?? 0;
     const occupied = taken.get(row) ?? new Set<number>();
-    const preferred = lane.get(primary.get(block.id) ?? '') ?? 0;
+    const lanes = (predecessors.get(block.id) ?? [])
+      .map((id) => lane.get(id))
+      .filter((value): value is number => value !== undefined);
+    const preferred = lanes.length > 0 ? Math.min(...lanes) : 0;
 
     let slot = preferred;
     while (occupied.has(slot)) slot += 1;

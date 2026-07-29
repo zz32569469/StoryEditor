@@ -58,6 +58,20 @@
   border-radius: 6px;
   overflow: hidden;
   background: var(--bg);
+  position: relative;
+}
+
+.flow-blank {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  color: var(--text-dim);
+  /* 蓋在畫布上，但不能擋住底下的平移縮放。 */
+  pointer-events: none;
+  z-index: 1;
 }
 
 .flow-canvas .react-flow__controls button {

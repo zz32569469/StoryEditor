@@ -243,6 +243,11 @@ export default function FlowGraph() {
       </div>
 
       <div className="flow-canvas" ref={canvasRef}>
+        {/* 空場景會畫出一片什麼都沒有的畫布，看起來像載入失敗。
+            劇本 xlsx 裡「只有標題列」的工作表會匯入成空場景，這不算少見。 */}
+        {graph.blocks.length === 0 && (
+          <p className="flow-blank">這個場景還沒有內容。</p>
+        )}
         <ReactFlow
           nodes={nodes}
           edges={edges}

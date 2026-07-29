@@ -101,6 +101,63 @@ describe('匯入既有劇本格式', () => {
     expect(choicePoint.choices.map((c) => c.sourceId)).toEqual(['1', '2']);
   });
 
+  it('沒有標組的連續 if 列算同一個判斷', async () => {
+    // 實際劇本裡三選一的條件判斷是不標組的。若各自成為獨立節點，
+    // 只有第一列接得到 —— 另外兩條路在遊戲裡永遠走不到，而且不會報錯。
+    const { project } = await importLegacyWorkbook(
+      await makeWorkbook({
+        'CH-0': [
+          { 標誌: '', ID: '0', 內容: '……', 跳轉: '1' },
+          { 標誌: 'if', ID: '1', 組: '', 內容: 'composure >= 75', 跳轉: '4' },
+          { 標誌: 'if', ID: '2', 組: '', 內容: 'composure <= 74', 跳轉: '5' },
+          { 標誌: 'if', ID: '3', 組: '', 內容: 'composure <= 24', 跳轉: '6' },
+          { 標誌: '', ID: '4', 內容: '冷靜。', 跳轉: '' },
+          { 標誌: '', ID: '5', 內容: '有點慌。', 跳轉: '' },
+          { 標誌: '', ID: '6', 內容: '完全慌了。', 跳轉: '' },
+        ],
+      }),
+      '測試',
+    );
+
+    const branch = project.scenes[0]!.nodes.find((n) => n.kind === 'branch')!;
+    expect(branch.branches.map((b) => b.condition)).toEqual([
+      'composure >= 75',
+      'composure <= 74',
+      'composure <= 24',
+    ]);
+    expect(branch.branches.map((b) => b.sourceId)).toEqual(['1', '2', '3']);
+  });
+
+  it('中間夾了台詞的 if 列不算同一組', async () => {
+    const { project } = await importLegacyWorkbook(
+      await makeWorkbook({
+        'CH-0': [
+          { 標誌: 'if', ID: '0', 內容: 'a', 跳轉: '1' },
+          { 標誌: '', ID: '1', 內容: '中間的台詞。', 跳轉: '2' },
+          { 標誌: 'if', ID: '2', 內容: 'b', 跳轉: '1' },
+        ],
+      }),
+      '測試',
+    );
+
+    const branches = project.scenes[0]!.nodes.filter((n) => n.kind === 'branch');
+    expect(branches).toHaveLength(2);
+  });
+
+  it('只有標題列的工作表會建成空場景，匯出時才不會整張消失', async () => {
+    const { project, report } = await importLegacyWorkbook(
+      await makeWorkbook({ 'CH-0': SAMPLE['CH-0-序章']!, 'CH-1-待寫': [] }),
+      '測試',
+    );
+
+    const empty = project.scenes.find((s) => s.name === 'CH-1-待寫');
+    expect(empty?.nodes).toEqual([]);
+    expect(report.scenes).toBe(2);
+
+    const result = await readWorkbook(await (await exportLegacyWorkbook(project)).blob.arrayBuffer());
+    expect(Object.keys(result)).toContain('CH-1-待寫');
+  });
+
   it('保留立繪的中文命名與未支援的製作欄位', async () => {
     const { project } = await importLegacyWorkbook(await makeWorkbook(SAMPLE), '測試');
     const nodes = project.scenes[0]!.nodes;
@@ -170,7 +227,17 @@ describe('匯入既有劇本格式', () => {
   it('空白工作表列入提醒而非靜默略過', async () => {
     const data = await makeWorkbook({ ...SAMPLE, 'CH-2-空的': [] });
     const { report } = await importLegacyWorkbook(data, '測試');
-    expect(report.warnings.some((w) => w.includes('沒有資料列'))).toBe(true);
+    expect(report.warnings.some((w) => w.includes('只有標題列'))).toBe(true);
+  });
+
+  it('連標題列都沒有的工作表才真的略過', async () => {
+    const workbook = new ExcelJS.Workbook();
+    workbook.addWorksheet('CH-3-全空');
+    const data = (await workbook.xlsx.writeBuffer()) as ArrayBuffer;
+
+    const { project, report } = await importLegacyWorkbook(data, '測試');
+    expect(project.scenes).toHaveLength(0);
+    expect(report.warnings.some((w) => w.includes('連標題列都沒有'))).toBe(true);
   });
 });
 

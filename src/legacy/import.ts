@@ -145,19 +145,39 @@ function convertSheet(
 ): Scene {
   const byId = new Map(rows.map((row) => [row.id, row]));
 
+  /**
+   * 把 q／if 列分組。
+   *
+   * 有標「組」的照組欄分。**沒有標組時，緊鄰的同類列算同一組** ——
+   * 實際劇本裡連續三列 `if`（composure >= 75 / <= 74 / <= 24）就是沒有標組的，
+   * 那是一個三選一的判斷。若讓它們各自成為獨立節點，只有第一列接得到，
+   * 另外兩條路整整半個場景在遊戲裡永遠走不到，而且不會有任何錯誤訊息。
+   *
+   * 「緊鄰」看的是來源表的原始列序，中間夾了台詞就不算同一組。
+   * 有標組的列不會把後面沒標組的列吸進來 —— 標了組就是明確的界線。
+   */
   const groupMembers = new Map<string, RawRow[]>();
-  for (const row of rows) {
-    if (row.marker !== 'q' && row.marker !== 'if') continue;
-    const key = `${row.marker}:${row.group || `_solo_${row.id}`}`;
-    groupMembers.set(key, [...(groupMembers.get(key) ?? []), row]);
-  }
-
   const groupKeyOf = new Map<string, string>();
+
+  rows.forEach((row, index) => {
+    if (row.marker !== 'q' && row.marker !== 'if') return;
+
+    const previous = rows[index - 1];
+    const continuesRun =
+      !row.group && previous?.marker === row.marker && !previous.group;
+
+    const key = row.group
+      ? `${row.marker}:${row.group}`
+      : continuesRun
+        ? groupKeyOf.get(previous.id)!
+        : `${row.marker}:_run_${row.id}`;
+
+    groupKeyOf.set(row.id, key);
+    groupMembers.set(key, [...(groupMembers.get(key) ?? []), row]);
+  });
+
   const groupLeader = new Map<string, string>();
-  for (const [key, members] of groupMembers) {
-    for (const member of members) groupKeyOf.set(member.id, key);
-    groupLeader.set(key, members[0]!.id);
-  }
+  for (const [key, members] of groupMembers) groupLeader.set(key, members[0]!.id);
 
   /** 來源 ID → 代表該列的節點的來源 ID（群組成員一律指向組長）。 */
   const canonicalId = (sourceId: string): string =>
@@ -340,7 +360,22 @@ export async function importLegacyWorkbook(
     const rows = readRows(sheet, headers, report.warnings);
     report.rows += rows.length;
     if (rows.length === 0) {
-      report.warnings.push(`工作表「${sheet.name}」沒有資料列，未建立場景`);
+      // 只有標題列的工作表是「還沒寫的下一章」，不是垃圾。
+      // 直接略過的話，匯出時整張表會消失 —— 使用者預先排好的空白模板
+      // 就這樣不見了，而且沒有任何提示。建成空場景帶著走。
+      if (headers.filter(Boolean).length === 0) {
+        report.warnings.push(`工作表「${sheet.name}」連標題列都沒有，未建立場景`);
+        continue;
+      }
+      report.warnings.push(`工作表「${sheet.name}」只有標題列，已建成空場景`);
+      project.scenes.push({
+        id: newId(),
+        name: sheet.name.trim(),
+        entryNodeId: null,
+        nodes: [],
+        sourceColumns: headers.filter(Boolean),
+      });
+      report.scenes += 1;
       continue;
     }
     project.scenes.push(convertSheet(sheet.name, headers, rows, characters, report));
