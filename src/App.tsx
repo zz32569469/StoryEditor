@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { CharacterPanel } from './editor/CharacterPanel';
 import { ImportReport } from './editor/ImportReport';
@@ -20,7 +20,16 @@ import { defaultDecisions, mergeCells, resolveAccepted, type MergeReport } from 
 
 import './App.css';
 
+/**
+ * 流程圖連同 React Flow 一起延後載入。
+ *
+ * 它是整個專案最大的一塊依賴，而多數時候使用者只是在改台詞 ——
+ * 沒切到流程圖就不該付這個下載成本。
+ */
+const FlowGraph = lazy(() => import('./graph/FlowGraph'));
+
 type Tab = 'dialogue' | 'characters' | 'variables';
+type View = 'preview' | 'graph';
 
 interface PendingImport {
   report: MergeReport;
@@ -43,6 +52,7 @@ export default function App() {
 
   const { containerRef, width: paneWidth, isResizing, resizerProps, resetWidth } = useSplitPane();
   const [tab, setTab] = useState<Tab>('dialogue');
+  const [view, setView] = useState<View>('preview');
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [status, setStatus] = useState('');
   const projectFileRef = useRef<HTMLInputElement>(null);
@@ -285,7 +295,31 @@ export default function App() {
 
       <main ref={containerRef} className={`workspace ${isResizing ? 'is-resizing' : ''}`}>
         <section className="pane pane--preview">
-          <DialogueStage />
+          <nav className="view-switch">
+            <button
+              type="button"
+              className={view === 'preview' ? 'is-active' : ''}
+              onClick={() => setView('preview')}
+            >
+              對話預覽
+            </button>
+            <button
+              type="button"
+              className={view === 'graph' ? 'is-active' : ''}
+              onClick={() => setView('graph')}
+              title="看這個場景的分支結構"
+            >
+              流程圖
+            </button>
+          </nav>
+
+          {view === 'preview' ? (
+            <DialogueStage />
+          ) : (
+            <Suspense fallback={<p className="loading-hint">載入流程圖…</p>}>
+              <FlowGraph />
+            </Suspense>
+          )}
         </section>
 
         <div className="resizer" {...resizerProps} onDoubleClick={resetWidth} />

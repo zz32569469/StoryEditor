@@ -159,6 +159,23 @@
   background: var(--accent);
 }
 
+/* ---------- 左側檢視切換 ---------- */
+
+.view-switch {
+  display: flex;
+  gap: 4px;
+  align-self: flex-start;
+}
+
+.view-switch button.is-active {
+  background: #2f4f7d;
+  border-color: #3d6396;
+}
+
+.loading-hint {
+  color: var(--text-dim);
+}
+
 /* ---------- 台詞畫面 ---------- */
 
 .stage {
