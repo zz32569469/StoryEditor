@@ -1,0 +1,1416 @@
+{
+  "version": 1,
+  "registry": [
+    {
+      "name": "b",
+      "kind": "paired",
+      "params": [],
+      "description": "粗體"
+    },
+    {
+      "name": "i",
+      "kind": "paired",
+      "params": [],
+      "description": "斜體"
+    },
+    {
+      "name": "color",
+      "kind": "paired",
+      "positional": "value",
+      "params": [
+        {
+          "name": "value",
+          "type": "color",
+          "description": "十六進位色碼，例 #ff3333"
+        }
+      ],
+      "description": "文字顏色"
+    },
+    {
+      "name": "size",
+      "kind": "paired",
+      "positional": "value",
+      "params": [
+        {
+          "name": "value",
+          "type": "number",
+          "default": 1.5,
+          "description": "相對於基準字級的倍率"
+        }
+      ],
+      "description": "文字大小（倍率）"
+    },
+    {
+      "name": "font",
+      "kind": "paired",
+      "positional": "value",
+      "params": [
+        {
+          "name": "value",
+          "type": "string",
+          "description": "字型代號，兩端各自對應到實際字型資產"
+        }
+      ],
+      "description": "切換字型"
+    },
+    {
+      "name": "shake",
+      "kind": "paired",
+      "params": [
+        {
+          "name": "amp",
+          "type": "number",
+          "default": 2,
+          "description": "振幅（像素／單位）"
+        },
+        {
+          "name": "freq",
+          "type": "number",
+          "default": 20,
+          "description": "頻率（每秒）"
+        }
+      ],
+      "description": "逐字抖動"
+    },
+    {
+      "name": "wave",
+      "kind": "paired",
+      "params": [
+        {
+          "name": "amp",
+          "type": "number",
+          "default": 3,
+          "description": "振幅"
+        },
+        {
+          "name": "freq",
+          "type": "number",
+          "default": 2,
+          "description": "頻率（每秒）"
+        }
+      ],
+      "description": "波浪起伏"
+    },
+    {
+      "name": "speed",
+      "kind": "paired",
+      "positional": "value",
+      "params": [
+        {
+          "name": "value",
+          "type": "number",
+          "default": 0.5,
+          "description": "相對於基準速度的倍率，小於 1 為變慢"
+        }
+      ],
+      "description": "逐字速度（作用於選取範圍）"
+    },
+    {
+      "name": "wait",
+      "kind": "inline",
+      "positional": "value",
+      "params": [
+        {
+          "name": "value",
+          "type": "number",
+          "default": 0.3,
+          "description": "停頓秒數"
+        }
+      ],
+      "description": "停頓"
+    },
+    {
+      "name": "sfx",
+      "kind": "inline",
+      "positional": "value",
+      "params": [
+        {
+          "name": "value",
+          "type": "string",
+          "description": "音效代號"
+        }
+      ],
+      "description": "播放音效"
+    }
+  ],
+  "tags": [
+    {
+      "input": "沒有標記的純文字",
+      "plain": "沒有標記的純文字",
+      "chars": [
+        {
+          "char": "沒",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "有",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "標",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "記",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "的",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "純",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "文",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "字",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "",
+      "plain": "",
+      "chars": [],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[b]粗[/b]",
+      "plain": "粗",
+      "chars": [
+        {
+          "char": "粗",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[b]粗[i]又斜[/i][/b]",
+      "plain": "粗又斜",
+      "chars": [
+        {
+          "char": "粗",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "又",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            },
+            {
+              "name": "i",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "斜",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            },
+            {
+              "name": "i",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "前[shake amp=3 freq=10]抖[/shake]後",
+      "plain": "前抖後",
+      "chars": [
+        {
+          "char": "前",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "抖",
+          "effects": [
+            {
+              "name": "shake",
+              "params": {
+                "amp": {
+                  "kind": "number",
+                  "display": "3"
+                },
+                "freq": {
+                  "kind": "number",
+                  "display": "10"
+                }
+              }
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "後",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "{i}{color=#606060}（旁白）{/color}{/i}",
+      "plain": "（旁白）",
+      "chars": [
+        {
+          "char": "（",
+          "effects": [
+            {
+              "name": "i",
+              "params": {}
+            },
+            {
+              "name": "color",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "#606060"
+                }
+              }
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "旁",
+          "effects": [
+            {
+              "name": "i",
+              "params": {}
+            },
+            {
+              "name": "color",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "#606060"
+                }
+              }
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "白",
+          "effects": [
+            {
+              "name": "i",
+              "params": {}
+            },
+            {
+              "name": "color",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "#606060"
+                }
+              }
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "）",
+          "effects": [
+            {
+              "name": "i",
+              "params": {}
+            },
+            {
+              "name": "color",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "#606060"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "{size=130%}大{/size}",
+      "plain": "大",
+      "chars": [
+        {
+          "char": "大",
+          "effects": [
+            {
+              "name": "size",
+              "params": {
+                "value": {
+                  "kind": "number",
+                  "display": "1.3"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[color=#f00]紅[/color]",
+      "plain": "紅",
+      "chars": [
+        {
+          "char": "紅",
+          "effects": [
+            {
+              "name": "color",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "#f00"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[size=0.5]小[/size]",
+      "plain": "小",
+      "chars": [
+        {
+          "char": "小",
+          "effects": [
+            {
+              "name": "size",
+              "params": {
+                "value": {
+                  "kind": "number",
+                  "display": "0.5"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[color value=#00ff00]綠[/color]",
+      "plain": "綠",
+      "chars": [
+        {
+          "char": "綠",
+          "effects": [
+            {
+              "name": "color",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "#00ff00"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "停[wait=0.5]頓",
+      "plain": "停頓",
+      "chars": [
+        {
+          "char": "停",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "頓",
+          "effects": [],
+          "before": [
+            {
+              "name": "wait",
+              "params": {
+                "value": {
+                  "kind": "number",
+                  "display": "0.5"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[speed=0.5]慢慢說[/speed]",
+      "plain": "慢慢說",
+      "chars": [
+        {
+          "char": "慢",
+          "effects": [
+            {
+              "name": "speed",
+              "params": {
+                "value": {
+                  "kind": "number",
+                  "display": "0.5"
+                }
+              }
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "慢",
+          "effects": [
+            {
+              "name": "speed",
+              "params": {
+                "value": {
+                  "kind": "number",
+                  "display": "0.5"
+                }
+              }
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "說",
+          "effects": [
+            {
+              "name": "speed",
+              "params": {
+                "value": {
+                  "kind": "number",
+                  "display": "0.5"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "結尾之後[wait=1]",
+      "plain": "結尾之後",
+      "chars": [
+        {
+          "char": "結",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "尾",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "之",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "後",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [
+        {
+          "name": "wait",
+          "params": {
+            "value": {
+              "kind": "number",
+              "display": "1"
+            }
+          }
+        }
+      ],
+      "issues": []
+    },
+    {
+      "input": "[sfx=door]開門",
+      "plain": "開門",
+      "chars": [
+        {
+          "char": "開",
+          "effects": [],
+          "before": [
+            {
+              "name": "sfx",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "door"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "char": "門",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[font=\"Noto Serif TC\"]字型[/font]",
+      "plain": "字型",
+      "chars": [
+        {
+          "char": "字",
+          "effects": [
+            {
+              "name": "font",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "Noto Serif TC"
+                }
+              }
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "型",
+          "effects": [
+            {
+              "name": "font",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "Noto Serif TC"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[font=\"含\\\"引號\"]x[/font]",
+      "plain": "x",
+      "chars": [
+        {
+          "char": "x",
+          "effects": [
+            {
+              "name": "font",
+              "params": {
+                "value": {
+                  "kind": "string",
+                  "display": "含\"引號"
+                }
+              }
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "\\[不是標記\\]",
+      "plain": "[不是標記]",
+      "chars": [
+        {
+          "char": "[",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "不",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "是",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "標",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "記",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "]",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "\\{也不是\\}",
+      "plain": "{也不是}",
+      "chars": [
+        {
+          "char": "{",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "也",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "不",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "是",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "}",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "反斜線 \\\\ 本身",
+      "plain": "反斜線 \\ 本身",
+      "chars": [
+        {
+          "char": "反",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "斜",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "線",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": " ",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "\\",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": " ",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "本",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "身",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "<i>這是變數插值的括號</i>",
+      "plain": "<i>這是變數插值的括號</i>",
+      "chars": [
+        {
+          "char": "<",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "i",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": ">",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "這",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "是",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "變",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "數",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "插",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "值",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "的",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "括",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "號",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "<",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "/",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "i",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": ">",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "<lastName>，對吧？",
+      "plain": "<lastName>，對吧？",
+      "chars": [
+        {
+          "char": "<",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "l",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "a",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "s",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "t",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "N",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "a",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "m",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "e",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": ">",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "，",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "對",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "吧",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "？",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": []
+    },
+    {
+      "input": "[notatag]x",
+      "plain": "x",
+      "chars": [
+        {
+          "char": "x",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "未知的標籤 [notatag]",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[b]沒有結束",
+      "plain": "沒有結束",
+      "chars": [
+        {
+          "char": "沒",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "有",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "結",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "束",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "標籤 [b] 沒有結束標籤",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "多餘的[/b]",
+      "plain": "多餘的",
+      "chars": [
+        {
+          "char": "多",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "餘",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "的",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "多餘的結束標籤 [/b]",
+          "index": 3
+        }
+      ]
+    },
+    {
+      "input": "[b]名稱不符[/i]",
+      "plain": "名稱不符",
+      "chars": [
+        {
+          "char": "名",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "稱",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "不",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "符",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "結束標籤 [/i] 與最近的 [b] 不匹配",
+          "index": 7
+        },
+        {
+          "message": "標籤 [b] 沒有結束標籤",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[b]括號不符{/b}",
+      "plain": "括號不符",
+      "chars": [
+        {
+          "char": "括",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "號",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "不",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "符",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "[b] 要用 [/b] 結束，不是 {/b}",
+          "index": 7
+        }
+      ]
+    },
+    {
+      "input": "[wait=1]不需要結束[/wait]",
+      "plain": "不需要結束",
+      "chars": [
+        {
+          "char": "不",
+          "effects": [],
+          "before": [
+            {
+              "name": "wait",
+              "params": {
+                "value": {
+                  "kind": "number",
+                  "display": "1"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "char": "需",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "要",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "結",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "束",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "[wait] 是單點標籤，不需要結束標籤",
+          "index": 13
+        }
+      ]
+    },
+    {
+      "input": "[color]缺少色碼[/color]",
+      "plain": "缺少色碼",
+      "chars": [
+        {
+          "char": "缺",
+          "effects": [
+            {
+              "name": "color",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "少",
+          "effects": [
+            {
+              "name": "color",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "色",
+          "effects": [
+            {
+              "name": "color",
+              "params": {}
+            }
+          ],
+          "before": []
+        },
+        {
+          "char": "碼",
+          "effects": [
+            {
+              "name": "color",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "標籤 [color] 缺少必要參數 \"value\"",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[color=不是色碼]x[/color]",
+      "plain": "x",
+      "chars": [
+        {
+          "char": "x",
+          "effects": [
+            {
+              "name": "color",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "[color] 的 value：\"不是色碼\" 不是合法色碼（例 #ff3333）",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[size=abc]x[/size]",
+      "plain": "x",
+      "chars": [
+        {
+          "char": "x",
+          "effects": [
+            {
+              "name": "size",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "[size] 的 value：\"abc\" 不是數字",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[b bad=1]x[/b]",
+      "plain": "x",
+      "chars": [
+        {
+          "char": "x",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "標籤 [b] 沒有參數 \"bad\"",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[b=1]x[/b]",
+      "plain": "x",
+      "chars": [
+        {
+          "char": "x",
+          "effects": [
+            {
+              "name": "b",
+              "params": {}
+            }
+          ],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "標籤 [b] 不支援 = 簡寫",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[未關閉",
+      "plain": "[未關閉",
+      "chars": [
+        {
+          "char": "[",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "未",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "關",
+          "effects": [],
+          "before": []
+        },
+        {
+          "char": "閉",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "標籤未正確結束（缺少 ] 或格式錯誤）",
+          "index": 0
+        }
+      ]
+    },
+    {
+      "input": "[",
+      "plain": "[",
+      "chars": [
+        {
+          "char": "[",
+          "effects": [],
+          "before": []
+        }
+      ],
+      "trailing": [],
+      "issues": [
+        {
+          "message": "標籤未正確結束（缺少 ] 或格式錯誤）",
+          "index": 0
+        }
+      ]
+    }
+  ]
+}

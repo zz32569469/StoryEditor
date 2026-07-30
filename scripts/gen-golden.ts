@@ -12,6 +12,8 @@ import {
   type PlayerStatus,
 } from '../src/runtime/player';
 import { FORMAT_VERSION, type StoryNode, type StoryProject } from '../src/schema/story';
+import { DEFAULT_TAG_REGISTRY } from '../src/schema/tags';
+import { parseText, type ResolvedTag } from '../src/tags/parse';
 
 /**
  * 產生黃金測資：C# 端讀同一份跑一遍，結果不一致就是兩邊分歧。
@@ -417,6 +419,97 @@ const playthroughs: PlaythroughCase[] = [
   playthrough('找不到場景', linear, 'nope', []),
 ];
 
+// ---------------------------------------------------------------- 特效標記
+
+interface EncodedTag {
+  name: string;
+  params: Record<string, { kind: 'number' | 'string' | 'bool'; display: string }>;
+}
+
+interface TagCase {
+  input: string;
+  plain: string;
+  chars: { char: string; effects: EncodedTag[]; before: EncodedTag[] }[];
+  trailing: EncodedTag[];
+  issues: { message: string; index: number }[];
+}
+
+function encodeTag(tag: ResolvedTag): EncodedTag {
+  const params: EncodedTag['params'] = {};
+  for (const key of Object.keys(tag.params).sort()) {
+    const value = tag.params[key]!;
+    const kind = typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'bool' : 'string';
+    params[key] = { kind, display: String(value) };
+  }
+  return { name: tag.name, params };
+}
+
+function tagCase(input: string): TagCase {
+  const parsed = parseText(input, DEFAULT_TAG_REGISTRY);
+  return {
+    input,
+    plain: parsed.plain,
+    chars: parsed.chars.map((c) => ({
+      char: c.char,
+      effects: c.effects.map(encodeTag),
+      before: c.before.map(encodeTag),
+    })),
+    trailing: parsed.trailing.map(encodeTag),
+    issues: parsed.issues.map((issue) => ({ message: issue.message, index: issue.index })),
+  };
+}
+
+const tags: TagCase[] = [
+  tagCase('沒有標記的純文字'),
+  tagCase(''),
+
+  // 成對與嵌套
+  tagCase('[b]粗[/b]'),
+  tagCase('[b]粗[i]又斜[/i][/b]'),
+  tagCase('前[shake amp=3 freq=10]抖[/shake]後'),
+
+  // 簡寫與百分比 —— 實際劇本大量使用的形式
+  tagCase('{i}{color=#606060}（旁白）{/color}{/i}'),
+  tagCase('{size=130%}大{/size}'),
+  tagCase('[color=#f00]紅[/color]'),
+  tagCase('[size=0.5]小[/size]'),
+  tagCase('[color value=#00ff00]綠[/color]'),
+
+  // 單點標籤
+  tagCase('停[wait=0.5]頓'),
+  tagCase('[speed=0.5]慢慢說[/speed]'),
+  tagCase('結尾之後[wait=1]'),
+  tagCase('[sfx=door]開門'),
+
+  // 引號與空白
+  tagCase('[font="Noto Serif TC"]字型[/font]'),
+  tagCase('[font="含\\"引號"]x[/font]'),
+
+  // 轉義
+  tagCase('\\[不是標記\\]'),
+  tagCase('\\{也不是\\}'),
+  tagCase('反斜線 \\\\ 本身'),
+
+  // 尖括號不是標記，原樣保留（TMP 會自己處理）
+  tagCase('<i>這是變數插值的括號</i>'),
+  tagCase('<lastName>，對吧？'),
+
+  // 各種壞掉的寫法
+  tagCase('[notatag]x'),
+  tagCase('[b]沒有結束'),
+  tagCase('多餘的[/b]'),
+  tagCase('[b]名稱不符[/i]'),
+  tagCase('[b]括號不符{/b}'),
+  tagCase('[wait=1]不需要結束[/wait]'),
+  tagCase('[color]缺少色碼[/color]'),
+  tagCase('[color=不是色碼]x[/color]'),
+  tagCase('[size=abc]x[/size]'),
+  tagCase('[b bad=1]x[/b]'),
+  tagCase('[b=1]x[/b]'),
+  tagCase('[未關閉'),
+  tagCase('['),
+];
+
 // ---------------------------------------------------------------- 輸出
 
 mkdirSync(OUT, { recursive: true });
@@ -430,11 +523,13 @@ function write(name: string, payload: unknown): string {
 
 write('expressions.json', { version: 1, expressions, assignments, inputs });
 write('playthroughs.json', { version: 1, playthroughs });
+write('tags.json', { version: 1, registry: DEFAULT_TAG_REGISTRY, tags });
 
 console.log(
   `已寫出 ${OUT}\n` +
     `  運算式 ${expressions.length}（其中解析失敗 ${expressions.filter((c) => c.parseError).length}、` +
     `求值失敗 ${expressions.filter((c) => c.evalError).length}）\n` +
     `  賦值 ${assignments.length}、輸入節點 ${inputs.length}\n` +
-    `  整場走訪 ${playthroughs.length}，共 ${playthroughs.reduce((n, p) => n + p.snapshots.length, 0)} 個快照`,
+    `  整場走訪 ${playthroughs.length}，共 ${playthroughs.reduce((n, p) => n + p.snapshots.length, 0)} 個快照\n` +
+    `  特效標記 ${tags.length}（其中有問題的 ${tags.filter((t) => t.issues.length > 0).length} 個）`,
 );

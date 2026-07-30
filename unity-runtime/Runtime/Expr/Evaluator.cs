@@ -164,35 +164,7 @@ namespace StoryRuntime.Expressions {
                 case ValueKind.Bool:   return value.AsBool ? 1 : 0;
             }
 
-            string text = value.AsString.Trim();
-            if (text.Length == 0) return 0;
-
-            if (text == "Infinity" || text == "+Infinity") return double.PositiveInfinity;
-            if (text == "-Infinity") return double.NegativeInfinity;
-
-            if (text.Length > 2 && text[0] == '0') {
-                char prefix = char.ToLowerInvariant(text[1]);
-                int radix = prefix == 'x' ? 16 : prefix == 'o' ? 8 : prefix == 'b' ? 2 : 0;
-                if (radix != 0) return ParseRadix(text.Substring(2), radix);
-            }
-
-            return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
-                ? parsed
-                : double.NaN;
-        }
-
-        static double ParseRadix(string digits, int radix) {
-            if (digits.Length == 0) return double.NaN;
-            double result = 0;
-            foreach (char c in digits) {
-                int digit =
-                    c >= '0' && c <= '9' ? c - '0' :
-                    c >= 'a' && c <= 'f' ? c - 'a' + 10 :
-                    c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
-                if (digit < 0 || digit >= radix) return double.NaN;
-                result = result * radix + digit;
-            }
-            return result;
+            return JsNumber.Parse(value.AsString);
         }
 
         public static Dictionary<string, HostFunction> CreateBuiltins() {

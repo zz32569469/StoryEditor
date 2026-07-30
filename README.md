@@ -11,7 +11,8 @@
 - 文字特效以內嵌標記表示，網頁預覽與 Unity 共用同一份標籤定義
 - Excel（`.xlsx`）**雙向同步**：匯出給編劇／翻譯修改，改完匯回並以三方合併處理衝突
 
-資料格式規格見 [`docs/FORMAT.md`](docs/FORMAT.md)。
+資料格式規格見 [`docs/FORMAT.md`](docs/FORMAT.md)；Unity 端的 C# runtime 見
+[`unity-runtime/`](unity-runtime/)，行為以黃金測資與網頁端逐案對齊。
 
 ## 本機開發
 
@@ -28,6 +29,7 @@ npm install
 | `npm run convert -- <來源.xlsx> [輸出.story.json]` | 把既有劇本表格轉成專案檔，見下 |
 | `npm run analyze -- <專案.story.json> [場景關鍵字]` | 逐場景列出摺成幾塊、幾層幾行、hub 數、**走不到的段落**；加上場景關鍵字則印出該場景每一塊的來源編號與去向 |
 | `npm run check:roundtrip -- <來源.xlsx>` | 匯入再匯出，逐格比對來源劇本，確認原樣往返 |
+| `npm run gen:golden` | 產生 Unity runtime 的黃金測資（改運算式、標記或播放器語意後必跑） |
 | `npm run build` | 產出靜態網站 |
 
 ## 兩種 Excel，別搞混
@@ -99,7 +101,7 @@ Excel 的雙向同步立刻失效。
 | M2 | tag parser、逐字播放預覽 | ✅ |
 | M3 | 條件求值、變數系統、從頭播放、流程圖 | ✅ |
 | M4 | Excel 三方合併與衝突 UI | ✅ |
-| M5 | Unity runtime 套件 | 待做 |
+| M5 | Unity runtime 套件 | 核心層完成（見 [`unity-runtime/`](unity-runtime/)）；UI 與接線待做 |
 | — | 既有劇本 xlsx 的原樣往返匯入匯出 | ✅ |
 
 M2 與 M1 合併實作 —— 預覽是使用者判斷特效對不對的唯一途徑，不能等到編輯器之後才做。

@@ -111,6 +111,42 @@ namespace StoryRuntime.Expressions {
             return value.ToString("R", CultureInfo.InvariantCulture);
         }
 
+        // JS 的 Number(string)。
+        //
+        // 標記參數與內建函式都要用它，不能用 double.Parse —— 兩者在空字串、
+        // 十六進位前綴這幾種輸入上不同，而既有劇本的參數是人手寫的，什麼都可能出現。
+        public static double Parse(string raw) {
+            string text = (raw ?? "").Trim();
+            if (text.Length == 0) return 0;
+
+            if (text == "Infinity" || text == "+Infinity") return double.PositiveInfinity;
+            if (text == "-Infinity") return double.NegativeInfinity;
+
+            if (text.Length > 2 && text[0] == '0') {
+                char prefix = char.ToLowerInvariant(text[1]);
+                int radix = prefix == 'x' ? 16 : prefix == 'o' ? 8 : prefix == 'b' ? 2 : 0;
+                if (radix != 0) return ParseRadix(text.Substring(2), radix);
+            }
+
+            return double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
+                ? parsed
+                : double.NaN;
+        }
+
+        static double ParseRadix(string digits, int radix) {
+            if (digits.Length == 0) return double.NaN;
+            double result = 0;
+            foreach (char c in digits) {
+                int digit =
+                    c >= '0' && c <= '9' ? c - '0' :
+                    c >= 'a' && c <= 'f' ? c - 'a' + 10 :
+                    c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
+                if (digit < 0 || digit >= radix) return double.NaN;
+                result = result * radix + digit;
+            }
+            return result;
+        }
+
         static string ExponentialForm(double value) {
             // JS 寫成 1e+21 / 1e-7（尾數不補零、指數不補零）。
             string text = value.ToString("R", CultureInfo.InvariantCulture);
