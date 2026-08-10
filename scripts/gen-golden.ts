@@ -14,6 +14,7 @@ import {
 import { FORMAT_VERSION, type StoryNode, type StoryProject } from '../src/schema/story';
 import { DEFAULT_TAG_REGISTRY } from '../src/schema/tags';
 import { parseText, type ResolvedTag } from '../src/tags/parse';
+import { BASE_CHARS_PER_SECOND, buildSchedule } from '../src/preview/schedule';
 
 /**
  * 產生黃金測資：C# 端讀同一份跑一遍，結果不一致就是兩邊分歧。
@@ -510,6 +511,39 @@ const tags: TagCase[] = [
   tagCase('['),
 ];
 
+// ---------------------------------------------------------------- 逐字排程
+
+interface ScheduleCase {
+  input: string;
+  /** 每個字出現的時刻，以 String(number) 表示以求逐位一致。 */
+  times: string[];
+  total: string;
+}
+
+function scheduleCase(input: string): ScheduleCase {
+  const parsed = parseText(input, DEFAULT_TAG_REGISTRY);
+  const schedule = buildSchedule(parsed.chars);
+  return {
+    input,
+    times: schedule.times.map(String),
+    total: String(schedule.total),
+  };
+}
+
+const schedules: ScheduleCase[] = [
+  scheduleCase(''),
+  scheduleCase('一般速度'),
+  scheduleCase('停[wait=0.5]頓'),
+  scheduleCase('[wait=2]開頭就等'),
+  scheduleCase('結尾等[wait=1]'),
+  scheduleCase('[speed=0.5]慢[/speed]快'),
+  scheduleCase('[speed=2]快[/speed]一般'),
+  scheduleCase('[speed=0.01]夾到下限[/speed]'),
+  scheduleCase('[speed=2][speed=0.5]內層優先[/speed][/speed]'),
+  scheduleCase('[b]粗體不影響速度[/b]'),
+  scheduleCase('混[wait=0.25][speed=0.5]合[/speed]用'),
+];
+
 // ---------------------------------------------------------------- 輸出
 
 mkdirSync(OUT, { recursive: true });
@@ -524,6 +558,7 @@ function write(name: string, payload: unknown): string {
 write('expressions.json', { version: 1, expressions, assignments, inputs });
 write('playthroughs.json', { version: 1, playthroughs });
 write('tags.json', { version: 1, registry: DEFAULT_TAG_REGISTRY, tags });
+write('schedules.json', { version: 1, baseCharsPerSecond: BASE_CHARS_PER_SECOND, schedules });
 
 console.log(
   `已寫出 ${OUT}\n` +
@@ -531,5 +566,7 @@ console.log(
     `求值失敗 ${expressions.filter((c) => c.evalError).length}）\n` +
     `  賦值 ${assignments.length}、輸入節點 ${inputs.length}\n` +
     `  整場走訪 ${playthroughs.length}，共 ${playthroughs.reduce((n, p) => n + p.snapshots.length, 0)} 個快照\n` +
-    `  特效標記 ${tags.length}（其中有問題的 ${tags.filter((t) => t.issues.length > 0).length} 個）`,
+    `  特效標記 ${tags.length}（其中有問題的 ${tags.filter((t) => t.issues.length > 0).length} 個）
+` +
+    `  逐字排程 ${schedules.length}`,
 );

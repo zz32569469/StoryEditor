@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 
 import type { TagRegistry } from '../schema/tags';
-import { parseText, type ParsedChar, type ResolvedTag } from '../tags/parse';
+import { parseText, type ParsedChar } from '../tags/parse';
+import { buildSchedule, tagNumber as num } from './schedule';
 
 /**
  * 把特效標記渲染成畫面，並以打字機效果逐字顯示。
@@ -19,12 +20,6 @@ const FONT_STACKS: Record<string, string> = {
   hand: '"Segoe Script", cursive',
 };
 
-const BASE_CHARS_PER_SECOND = 28;
-
-function num(tag: ResolvedTag, key: string, fallback: number): number {
-  const value = tag.params[key];
-  return typeof value === 'number' ? value : fallback;
-}
 
 interface CharVisual {
   style: CSSProperties;
@@ -70,30 +65,6 @@ function visualFor(char: ParsedChar, index: number): CharVisual {
   }
 
   return { style, classNames };
-}
-
-/**
- * 事先算出每個字出現的時間點。
- *
- * 用排程表而非「每幀推進一格」，是因為 wait 與 speed 會讓步進速率不固定；
- * 排好表之後播放邏輯就只剩「現在該顯示到第幾個字」，也讓拖曳進度成為可能。
- */
-function buildSchedule(chars: ParsedChar[]): { times: number[]; total: number } {
-  const times: number[] = [];
-  let t = 0;
-
-  for (const char of chars) {
-    for (const tag of char.before) {
-      if (tag.name === 'wait') t += num(tag, 'value', 0.3);
-    }
-    // speed 是成對標籤，作用範圍即這個字身上的 effects；巢狀時以最內層為準。
-    const speedTag = char.effects.findLast((e) => e.name === 'speed');
-    const speed = speedTag ? Math.max(0.05, num(speedTag, 'value', 1)) : 1;
-    t += 1 / (BASE_CHARS_PER_SECOND * speed);
-    times.push(t);
-  }
-
-  return { times, total: t };
 }
 
 export interface RichTextProps {
