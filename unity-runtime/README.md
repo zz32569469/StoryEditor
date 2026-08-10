@@ -2,7 +2,9 @@
 
 播放 StoryEditor 匯出的 `.story.json`。
 
-**目前只有核心層。** 對話 UI、逐字動畫、TMP 渲染、存檔接線都還沒做 —— 見下方「還沒做的」。
+**目前只有核心層** —— 解析、求值、走訪、TMP 標記與逐字時間表都做好了，
+但**對話框、選項 UI、存檔接線還沒有**，也就是還沒有任何東西會出現在畫面上。
+見下方「還沒做的」。
 
 ## 為什麼核心層不引用 UnityEngine
 
@@ -18,7 +20,7 @@
 | 命名空間 | 內容 |
 |---|---|
 | `StoryRuntime.Expressions` | 條件與賦值的 tokenizer、Pratt parser、求值器 |
-| `StoryRuntime.Tags` | 特效標記解析（`[b]…[/b]`、`{color=#f00}`、`[wait=0.5]`） |
+| `StoryRuntime.Tags` | 特效標記解析、TMP rich text 轉換、逐字播放時間表 |
 | `StoryRuntime.Story` | `.story.json` 的 DTO、Newtonsoft 載入、走訪狀態機 |
 
 ## 變數由遊戲擁有
@@ -51,6 +53,36 @@ state = StoryPlayer.SubmitInput(project, state, values, variables);
 
 中途存檔只要記 `state.SceneId` 與 `state.NodeId`，讀檔時從那一句重播。
 
+## 渲染一句台詞
+
+```csharp
+var parsed   = TagParser.ParseText(node.Text["zh"], project.TagRegistry);
+var markup   = TmpMarkup.CreateDefault().Render(parsed);   // TMP rich text
+var schedule = Typewriter.Build(parsed);                   // 每個字出現的時刻
+
+label.text = markup;
+label.maxVisibleCharacters = schedule.VisibleAt(elapsedSeconds);
+```
+
+**可見字元的順序與數量跟 `parsed.Chars` 完全一致** —— 標記只插在字與字之間，
+所以第 i 個字就是 TMP 的第 i 個可見字元，`maxVisibleCharacters` 可以直接用索引推進。
+
+> 這個對應關係**還沒在 Unity 裡實測過**。TMP 對換行、空白的計數方式若與預期不同，
+> 逐字動畫會整段錯開 —— 接 UI 時第一件事就該驗證它。
+
+`sfx` 這類要在特定字觸發的事件，直接讀 `parsed.Chars[i].Before` 自己處理，
+時間表只負責時機。
+
+標籤 → TMP 的對應表可以改：
+
+```csharp
+var map = TmpMarkup.CreateDefault();
+map.Add("shake", (tag, open, close) => { open.Append("<rotate=5>"); close.Append("</rotate>"); });
+```
+
+對應表刻意**不放進 `.story.json`**：registry 描述的是「這個標籤有哪些參數」，
+那是編輯器與 runtime 共用的契約；「在 TMP 裡長什麼樣」只有 Unity 端在乎。
+
 ## 遊戲要自己提供的函式
 
 `CalcAge` 的內建版本是**預覽暫代**，真正的規則屬於遊戲。用 `PlayerOptions.Functions`
@@ -76,16 +108,18 @@ npm run gen:golden
 cd tools/csharp/StoryRuntime.Tests && dotnet test
 ```
 
-142 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
-（狀態、停在哪個節點、走過哪些節點、變數變化）。錯誤訊息也逐字比對 ——
-那些訊息會出現在使用者眼前，是規格的一部分。
+177 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
+（狀態、停在哪個節點、走過哪些節點、變數變化）、逐字節奏（每個字的時刻逐位比對）。
+錯誤訊息也逐字比對 —— 那些訊息會出現在使用者眼前，是規格的一部分。
+
+**唯一沒有對照的是 TMP 轉換**：網頁端輸出的是 CSS，沒有對應實作可比，
+所以那一層的期望值是手寫的，只證明「符合規格」而非「與編輯器一致」。
 
 `Tests~` 的 `~` 讓 Unity 完全忽略這個資料夾，測資不會被匯入成資產。
 
 ## 還沒做的
 
-- 對話 UI（TMP 對話框、選項、逐字動畫、`speed`／`wait` 的實際效果）
-- 標記 → TMP rich text 的轉換
+- 對話 UI（TMP 對話框、選項、把時間表接上 coroutine）
 - `sfx` 的音效 hook、立繪與音效鍵怎麼對應美術資產
 - `shake`／`wave` 的逐頂點動畫（現有劇本 0 次使用，刻意延後）
 - 與遊戲既有 StoryManager 的接線
