@@ -67,8 +67,19 @@ label.maxVisibleCharacters = schedule.VisibleAt(elapsedSeconds);
 **可見字元的順序與數量跟 `parsed.Chars` 完全一致** —— 標記只插在字與字之間，
 所以第 i 個字就是 TMP 的第 i 個可見字元，`maxVisibleCharacters` 可以直接用索引推進。
 
-> 這個對應關係**還沒在 Unity 裡實測過**。TMP 對換行、空白的計數方式若與預期不同，
-> 逐字動畫會整段錯開 —— 接 UI 時第一件事就該驗證它。
+這個對應關係**已在 Unity 6000.4.4f1 實測確認**（2026-08，TextMeshPro）：
+`maxVisibleCharacters` 數的與 `textInfo.characterCount` 是同一組，**空白與換行
+雖然 `isVisible == false`，仍佔一個索引**。所以：
+
+| 輸入 | TMP characterCount | 我們的 `Chars.Count` |
+|---|---|---|
+| `<i><color=#606060>（旁白）</color></i>` | 4 | 4 |
+| `第一行` + 換行 + `第二行` | 7 | 7 |
+| `有 空白 的 句子` | 9 | 9 |
+| `<size=130%>大</size>小` | 2 | 2 |
+
+實測 `有 空白 的 句子`：`maxVisibleCharacters = 2` 只露出「有」（索引 1 是空白，
+佔了額度但不顯示），`= 3` 才變成「有空」。逐字動畫直接用索引推進是安全的。
 
 `sfx` 這類要在特定字觸發的事件，直接讀 `parsed.Chars[i].Before` 自己處理，
 時間表只負責時機。
