@@ -56,7 +56,9 @@ state = StoryPlayer.SubmitInput(project, state, values, variables);
 ## 渲染一句台詞
 
 ```csharp
-var parsed   = TagParser.ParseText(node.Text["zh"], project.TagRegistry);
+// 插值必須在標記解析之前 —— 值裡可能含有標記，順序反過來就不會被渲染。
+var filled   = Interpolation.Interpolate(node.Text["zh"], name => LookUp(name));
+var parsed   = TagParser.ParseText(filled, project.TagRegistry);
 var markup   = TmpMarkup.CreateDefault().Render(parsed);   // TMP rich text
 var schedule = Typewriter.Build(parsed);                   // 每個字出現的時刻
 
@@ -80,6 +82,11 @@ label.maxVisibleCharacters = schedule.VisibleAt(elapsedSeconds);
 
 實測 `有 空白 的 句子`：`maxVisibleCharacters = 2` 只露出「有」（索引 1 是空白，
 佔了額度但不顯示），`= 3` 才變成「有空」。逐字動畫直接用索引推進是安全的。
+
+插值會把值裡的 `<` 換成全形 `＜`。玩家自己打的名字會被插進台詞、台詞最後餵給 TMP，
+名字裡的 `<size=500%>` 能把整段字撐爆 —— 尖括號在這套系統裡按定義就不是標記
+（它專屬變數插值），值裡出現它沒有正當用途。方括號與大括號**刻意不動**，
+值裡放標記是既有且有意的能力。轉義是一換一，逐字動畫的索引不受影響。
 
 `sfx` 這類要在特定字觸發的事件，直接讀 `parsed.Chars[i].Before` 自己處理，
 時間表只負責時機。
@@ -119,8 +126,8 @@ npm run gen:golden
 cd tools/csharp/StoryRuntime.Tests && dotnet test
 ```
 
-177 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
-（狀態、停在哪個節點、走過哪些節點、變數變化）、逐字節奏（每個字的時刻逐位比對）。
+192 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
+（狀態、停在哪個節點、走過哪些節點、變數變化）、逐字節奏（每個字的時刻逐位比對）、變數插值與轉義。
 錯誤訊息也逐字比對 —— 那些訊息會出現在使用者眼前，是規格的一部分。
 
 **唯一沒有對照的是 TMP 轉換**：網頁端輸出的是 CSS，沒有對應實作可比，

@@ -14,6 +14,7 @@ import {
 import { FORMAT_VERSION, type StoryNode, type StoryProject } from '../src/schema/story';
 import { DEFAULT_TAG_REGISTRY } from '../src/schema/tags';
 import { parseText, type ResolvedTag } from '../src/tags/parse';
+import { interpolate } from '../src/tags/interpolate';
 import { BASE_CHARS_PER_SECOND, buildSchedule } from '../src/preview/schedule';
 
 /**
@@ -544,6 +545,45 @@ const schedules: ScheduleCase[] = [
   scheduleCase('混[wait=0.25][speed=0.5]合[/speed]用'),
 ];
 
+// ---------------------------------------------------------------- 變數插值
+
+interface InterpolationCase {
+  input: string;
+  variables: Record<string, string>;
+  output: string;
+  missing: string[];
+}
+
+function interpolationCase(input: string, variables: Record<string, string>): InterpolationCase {
+  const result = interpolate(input, (name) =>
+    Object.prototype.hasOwnProperty.call(variables, name) ? variables[name] : undefined,
+  );
+  return { input, variables, output: result.text, missing: result.missing };
+}
+
+const NAMES = { lastName: '柚', firstName: '葉', age: '17' };
+
+const interpolations: InterpolationCase[] = [
+  interpolationCase('沒有插值的句子', {}),
+  interpolationCase('<lastName>，對吧？', NAMES),
+  interpolationCase('<lastName><firstName> 今年 <age> 歲。', NAMES),
+  interpolationCase('<missing> 找不到就原樣保留', NAMES),
+  interpolationCase('<lastName> 與 <missing> 混在一起', NAMES),
+
+  // 玩家輸入的值不能變成 TMP 標記
+  interpolationCase('<name>，對吧？', { name: '<size=500%>王' }),
+  interpolationCase('<name>', { name: '<b>粗</b>' }),
+  interpolationCase('<name>', { name: '<a<b<c' }),
+
+  // 方括號與大括號刻意保留 —— 值裡放標記是既有能力
+  interpolationCase('請注意：<em>', { em: '[b]很重要[/b]' }),
+  interpolationCase('<v>', { v: '{i}斜{/i}' }),
+
+  // 尖括號但不是合法識別字的，不算插值
+  interpolationCase('<1bad> 與 </close> 與 <with-dash>', NAMES),
+  interpolationCase('<color=#f00> 帶等號的不是插值', NAMES),
+];
+
 // ---------------------------------------------------------------- 輸出
 
 mkdirSync(OUT, { recursive: true });
@@ -559,6 +599,7 @@ write('expressions.json', { version: 1, expressions, assignments, inputs });
 write('playthroughs.json', { version: 1, playthroughs });
 write('tags.json', { version: 1, registry: DEFAULT_TAG_REGISTRY, tags });
 write('schedules.json', { version: 1, baseCharsPerSecond: BASE_CHARS_PER_SECOND, schedules });
+write('interpolations.json', { version: 1, interpolations });
 
 console.log(
   `已寫出 ${OUT}\n` +
@@ -568,5 +609,7 @@ console.log(
     `  整場走訪 ${playthroughs.length}，共 ${playthroughs.reduce((n, p) => n + p.snapshots.length, 0)} 個快照\n` +
     `  特效標記 ${tags.length}（其中有問題的 ${tags.filter((t) => t.issues.length > 0).length} 個）
 ` +
-    `  逐字排程 ${schedules.length}`,
+    `  逐字排程 ${schedules.length}
+` +
+    `  變數插值 ${interpolations.length}`,
 );
