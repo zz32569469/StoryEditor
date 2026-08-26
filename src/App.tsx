@@ -132,7 +132,12 @@ export default function App() {
 
   const handleLegacyImport = async (file: File) => {
     const name = file.name.replace(/\.xlsx$/i, '');
-    const { project: imported, report } = await importLegacyWorkbook(await file.arrayBuffer(), name);
+    // 沿用目前開著的專案的 id：重新匯入劇本時，翻譯進度與存檔位置才對得回去。
+    const { project: imported, report } = await importLegacyWorkbook(
+      await file.arrayBuffer(),
+      name,
+      project,
+    );
 
     const validation = validateStoryProject(imported);
     const errors = validation.issues.filter((i) => i.level === 'error');

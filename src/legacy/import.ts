@@ -142,6 +142,7 @@ function convertSheet(
   rows: RawRow[],
   characters: Map<string, Character>,
   report: LegacyImportReport,
+  reuse: IdReuse,
 ): Scene {
   const byId = new Map(rows.map((row) => [row.id, row]));
 
@@ -186,7 +187,7 @@ function convertSheet(
   const ulidOf = new Map<string, string>();
   for (const row of rows) {
     const canonical = canonicalId(row.id);
-    if (!ulidOf.has(canonical)) ulidOf.set(canonical, newId());
+    if (!ulidOf.has(canonical)) ulidOf.set(canonical, reuse.node(sheetName, canonical));
   }
 
   const resolveJump = (raw: string, from: RawRow): string | null => {
@@ -244,7 +245,7 @@ function convertSheet(
     if (leader.marker === 'q') {
       // 每個選項各自記人物 —— 同一組裡「（不介入）」可能是 system 而非玩家。
       const choices: Choice[] = members.map((member) => ({
-        id: newId(),
+        id: reuse.choice(sheetName, member.id),
         text: { zh: member.content },
         targetNodeId: resolveJump(member.jump, member),
         sourceId: member.id,
@@ -260,7 +261,7 @@ function convertSheet(
 
     if (leader.marker === 'if') {
       const branches: Branch[] = members.map((member) => ({
-        id: newId(),
+        id: reuse.branch(sheetName, member.id),
         condition: member.content,
         targetNodeId: resolveJump(member.jump, member),
         sourceId: member.id,
@@ -306,7 +307,7 @@ function convertSheet(
   }
 
   return {
-    id: newId(),
+    id: reuse.scene(sheetName),
     name: sheetName.trim(),
     entryNodeId: nodes[0]?.id ?? null,
     nodes,
@@ -331,15 +332,74 @@ function detectTagSyntax(project: StoryProject): TagSyntax {
   return brace > bracket ? 'brace' : 'bracket';
 }
 
+/**
+ * 重新匯入時沿用前一份專案的 id。
+ *
+ * ULID 不可變是雙向同步的地基（docs/FORMAT.md §0），但劇本 xlsx 的重新匯入原本
+ * 每次都重新配號 —— 翻譯表的 row_key、存檔裡的節點位置、指向場景的設定，
+ * 全部會在下一次匯入時對不上，而且不會有任何錯誤訊息。
+ *
+ * 比對鍵用「工作表名稱 + 來源 ID 欄」：這兩個值是使用者自己維護的，
+ * 跨轉檔穩定；用內容比對則會在改一個字時就換 id，正好違反不可變原則。
+ */
+export interface IdReuse {
+  scene(sheetName: string): string;
+  node(sheetName: string, sourceId: string): string;
+  choice(sheetName: string, sourceId: string): string;
+  branch(sheetName: string, sourceId: string): string;
+}
+
+function reuseIdsFrom(previous: StoryProject | null | undefined): IdReuse {
+  const scenes = new Map<string, string>();
+  const nodes = new Map<string, string>();
+  const choices = new Map<string, string>();
+  const branches = new Map<string, string>();
+
+  // 用   當分隔字元：工作表名與 ID 欄都可能含有一般標點，
+  // 用「-」之類的字元組鍵會讓不同的組合撞在一起。
+  const key = (sheet: string, sourceId: string) => `${sheet} ${sourceId}`;
+
+  for (const scene of previous?.scenes ?? []) {
+    const sheet = scene.name.trim();
+    scenes.set(sheet, scene.id);
+    for (const node of scene.nodes) {
+      if (node.source?.id) nodes.set(key(sheet, node.source.id), node.id);
+      for (const choice of node.choices) {
+        if (choice.sourceId) choices.set(key(sheet, choice.sourceId), choice.id);
+      }
+      for (const branch of node.branches) {
+        if (branch.sourceId) branches.set(key(sheet, branch.sourceId), branch.id);
+      }
+    }
+  }
+
+  const take = (map: Map<string, string>, k: string) => map.get(k) ?? newId();
+
+  return {
+    scene: (sheet) => take(scenes, sheet.trim()),
+    node: (sheet, sourceId) => take(nodes, key(sheet.trim(), sourceId)),
+    choice: (sheet, sourceId) => take(choices, key(sheet.trim(), sourceId)),
+    branch: (sheet, sourceId) => take(branches, key(sheet.trim(), sourceId)),
+  };
+}
+
 export async function importLegacyWorkbook(
   data: ArrayBuffer,
   projectName: string,
+  /**
+   * 上一次匯入的結果。給了就沿用它的 id，只有新增的列才配新號。
+   *
+   * 不給的話每次匯入都是全新的一份 —— 翻譯進度、存檔位置、指向場景的設定
+   * 會在下一次匯入時全部對不上，見 reuseIdsFrom 的說明。
+   */
+  previous?: StoryProject | null,
 ): Promise<{ project: StoryProject; report: LegacyImportReport }> {
   const { default: ExcelJS } = await import('exceljs');
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(data);
 
   const project = createEmptyProject(projectName, ['zh']);
+  const reuse = reuseIdsFrom(previous);
   const characters = new Map<string, Character>();
   const report: LegacyImportReport = {
     scenes: 0,
@@ -369,7 +429,7 @@ export async function importLegacyWorkbook(
       }
       report.warnings.push(`工作表「${sheet.name}」只有標題列，已建成空場景`);
       project.scenes.push({
-        id: newId(),
+        id: reuse.scene(sheet.name),
         name: sheet.name.trim(),
         entryNodeId: null,
         nodes: [],
@@ -378,7 +438,7 @@ export async function importLegacyWorkbook(
       report.scenes += 1;
       continue;
     }
-    project.scenes.push(convertSheet(sheet.name, headers, rows, characters, report));
+    project.scenes.push(convertSheet(sheet.name, headers, rows, characters, report, reuse));
     report.scenes += 1;
   }
 
