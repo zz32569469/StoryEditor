@@ -294,3 +294,25 @@ describe('stripTags', () => {
     expect(stripTags('[speed=0.6]又一個。[wait=0.4][/speed]', R)).toBe('又一個。');
   });
 });
+
+describe('插值的值不會注入 TMP 標記', () => {
+  const fill = (text: string, value: string) => interpolate(text, () => value).text;
+
+  it('尖括號換成全形，TMP 才不會把它當 rich text', () => {
+    // 玩家把名字打成 <size=500%> 就能把後面整段字撐爆。
+    expect(fill('<name>，對吧？', '<size=500%>王')).toBe('＜size=500%>王，對吧？');
+  });
+
+  it('方括號與大括號刻意不動 —— 值裡放標記是既有的能力', () => {
+    expect(fill('請注意：<em>', '[b]很重要[/b]')).toBe('請注意：[b]很重要[/b]');
+  });
+
+  it('一個輸入字元對一個輸出字元，逐字動畫的索引不受影響', () => {
+    const value = '<a<b<c';
+    expect(fill('<name>', value)).toHaveLength(value.length);
+  });
+
+  it('找不到變數時原樣保留，不會被動到', () => {
+    expect(interpolate('<missing>', () => undefined).text).toBe('<missing>');
+  });
+});

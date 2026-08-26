@@ -236,3 +236,41 @@ describe('factory', () => {
     expect(result.issues.filter((i) => i.level === 'error')).toEqual([]);
   });
 });
+
+describe('寫劇本時容易踩到的兩個坑', () => {
+  const withText = (text: string): StoryProject => {
+    const project = createEmptyProject('測試', ['zh']);
+    project.scenes = [createScene('第一幕', [createNode({ text: { zh: text } })])];
+    return project;
+  };
+
+  it('size 漏打 % 會被指出來', () => {
+    // {size=130%} 是 1.3 倍、{size=130} 是 130 倍，兩者都解析成功、都不報錯。
+    const issues = checkReferences(withText('{size=130}好大{/size}'));
+    const hit = issues.find((i) => i.message.includes('130 倍'));
+    expect(hit?.level).toBe('warning');
+  });
+
+  it('合理的倍率不會被誤報', () => {
+    for (const text of ['{size=130%}x{/size}', '[size=1.5]x[/size]', '[size=0.5]x[/size]']) {
+      expect(checkReferences(withText(text)).filter((i) => i.message.includes('倍'))).toEqual([]);
+    }
+  });
+
+  it('變數名撞到 TMP 標記會被指出來', () => {
+    const project = createEmptyProject('測試', ['zh']);
+    project.variables = [{ id: 'b', type: 'bool', default: false, description: '' }];
+    const hit = checkReferences(project).find((i) => i.path === 'variables.b');
+    expect(hit?.level).toBe('warning');
+    expect(hit?.message).toContain('TextMeshPro');
+  });
+
+  it('正常的變數名不會被誤報', () => {
+    const project = createEmptyProject('測試', ['zh']);
+    project.variables = [
+      { id: 'birthday', type: 'date', default: '', description: '' },
+      { id: 'composure', type: 'number', default: 0, description: '' },
+    ];
+    expect(checkReferences(project).filter((i) => i.path.startsWith('variables.'))).toEqual([]);
+  });
+});

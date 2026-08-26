@@ -19,6 +19,20 @@ export interface InterpolateResult {
   missing: string[];
 }
 
+/**
+ * 把插進來的值裡的 `<` 換成全形 `＜`。
+ *
+ * 值多半來自玩家輸入（MQ-0 就讓玩家打自己的姓名）。**尖括號在這套系統裡按定義
+ * 就不是標記** —— 它專屬變數插值，值裡出現 `<` 沒有任何正當用途。
+ * 但它會原樣傳到 TMP，玩家把名字打成 `<size=500%>` 就能把整段字撐爆。
+ *
+ * 只換 `<`：方括號與大括號**刻意保留**，因為值裡放標記是既有且有意的能力
+ * （見「插值先於標記解析」那個測試）。一換一，逐字動畫的索引不受影響。
+ */
+export function escapeValue(value: string): string {
+  return value.replace(/</g, '＜');
+}
+
 export function interpolate(
   text: string,
   resolve: (name: string) => string | undefined,
@@ -35,7 +49,7 @@ export function interpolate(
       // 保留原樣，讓使用者看得出這裡本來要放什麼。
       return whole;
     }
-    return value;
+    return escapeValue(value);
   });
 
   return { text: output, used, missing };
@@ -50,3 +64,15 @@ export function collectPlaceholders(text: string): string[] {
 export function renamePlaceholder(text: string, from: string, to: string): string {
   return text.replace(PLACEHOLDER_RE, (whole, name: string) => (name === from ? `<${to}>` : whole));
 }
+
+/**
+ * TextMeshPro 裡「不帶參數」的標記名。
+ *
+ * 這些寫成 `<b>`、`<i>` 的形式，與變數插值的樣子一模一樣 ——
+ * 變數若取這種名字，台詞裡的 `<b>` 會被當成插值換掉，那個 TMP 標記就無聲失效。
+ * 帶 `=` 的（`<color=…>`）與結束標記（`</b>`）不會撞，插值只認純識別字。
+ */
+export const TMP_BARE_TAGS: ReadonlySet<string> = new Set([
+  'b', 'i', 'u', 's', 'sub', 'sup', 'mark', 'nobr', 'br', 'page',
+  'noparse', 'allcaps', 'smallcaps', 'lowercase', 'uppercase',
+]);

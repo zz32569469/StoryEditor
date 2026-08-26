@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "interpolations": [
+    {
+      "input": "沒有插值的句子",
+      "variables": {},
+      "output": "沒有插值的句子",
+      "missing": []
+    },
+    {
+      "input": "<lastName>，對吧？",
+      "variables": {
+        "lastName": "柚",
+        "firstName": "葉",
+        "age": "17"
+      },
+      "output": "柚，對吧？",
+      "missing": []
+    },
+    {
+      "input": "<lastName><firstName> 今年 <age> 歲。",
+      "variables": {
+        "lastName": "柚",
+        "firstName": "葉",
+        "age": "17"
+      },
+      "output": "柚葉 今年 17 歲。",
+      "missing": []
+    },
+    {
+      "input": "<missing> 找不到就原樣保留",
+      "variables": {
+        "lastName": "柚",
+        "firstName": "葉",
+        "age": "17"
+      },
+      "output": "<missing> 找不到就原樣保留",
+      "missing": [
+        "missing"
+      ]
+    },
+    {
+      "input": "<lastName> 與 <missing> 混在一起",
+      "variables": {
+        "lastName": "柚",
+        "firstName": "葉",
+        "age": "17"
+      },
+      "output": "柚 與 <missing> 混在一起",
+      "missing": [
+        "missing"
+      ]
+    },
+    {
+      "input": "<name>，對吧？",
+      "variables": {
+        "name": "<size=500%>王"
+      },
+      "output": "＜size=500%>王，對吧？",
+      "missing": []
+    },
+    {
+      "input": "<name>",
+      "variables": {
+        "name": "<b>粗</b>"
+      },
+      "output": "＜b>粗＜/b>",
+      "missing": []
+    },
+    {
+      "input": "<name>",
+      "variables": {
+        "name": "<a<b<c"
+      },
+      "output": "＜a＜b＜c",
+      "missing": []
+    },
+    {
+      "input": "請注意：<em>",
+      "variables": {
+        "em": "[b]很重要[/b]"
+      },
+      "output": "請注意：[b]很重要[/b]",
+      "missing": []
+    },
+    {
+      "input": "<v>",
+      "variables": {
+        "v": "{i}斜{/i}"
+      },
+      "output": "{i}斜{/i}",
+      "missing": []
+    },
+    {
+      "input": "<1bad> 與 </close> 與 <with-dash>",
+      "variables": {
+        "lastName": "柚",
+        "firstName": "葉",
+        "age": "17"
+      },
+      "output": "<1bad> 與 </close> 與 <with-dash>",
+      "missing": []
+    },
+    {
+      "input": "<color=#f00> 帶等號的不是插值",
+      "variables": {
+        "lastName": "柚",
+        "firstName": "葉",
+        "age": "17"
+      },
+      "output": "<color=#f00> 帶等號的不是插值",
+      "missing": []
+    }
+  ]
+}

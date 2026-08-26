@@ -114,7 +114,12 @@ namespace StoryRuntime.Unity {
         }
 
         void StartTyping(string source) {
-            _parsed = TagParser.ParseText(source, Project.TagRegistry);
+            // 插值必須在標記解析之前：替換出來的值可能含有標記，
+            // 順序反過來那些標記就不會被渲染。
+            string filled = Interpolation.Interpolate(source, name =>
+                _variables.TryGet(name, out StoryValue value) ? value.ToDisplayString() : null);
+
+            _parsed = TagParser.ParseText(filled, Project.TagRegistry);
             _schedule = Typewriter.Build(_parsed, CharsPerSecond);
             _elapsed = 0;
             _revealed = -1;

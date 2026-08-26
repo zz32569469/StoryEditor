@@ -1,4 +1,4 @@
-import { collectPlaceholders } from '../tags/interpolate';
+import { collectPlaceholders, TMP_BARE_TAGS } from '../tags/interpolate';
 import { FORMAT_VERSION, StoryProjectSchema } from './story';
 import type { StoryProject } from './story';
 
@@ -60,6 +60,46 @@ export function checkReferences(project: StoryProject): ValidationIssue[] {
   }
   if (!meta.languages.includes(meta.baseLanguage)) {
     err('meta.baseLanguage', `baseLanguage "${meta.baseLanguage}" 不在 languages 清單中`);
+  }
+
+  // ---- size 的倍率漏打 % ----
+  //
+  // {size=130%} 是 1.3 倍，{size=130} 是 130 倍。兩者都解析成功、都不報錯，
+  // 但後者會把整段字撐爆到看不見。倍率大於 5 幾乎一定是漏了 %。
+  const BARE_SIZE = /[[{]\s*size\s*=\s*([0-9]*\.?[0-9]+)\s*[\]}]/g;
+  const checkSize = (path: string, text: string) => {
+    for (const match of text.matchAll(BARE_SIZE)) {
+      const value = Number(match[1]);
+      if (value > 5) {
+        warn(
+          path,
+          `「${match[0]}」是 ${value} 倍，不是 ${value}% —— 你要的可能是 {size=${match[1]}%}`,
+        );
+      }
+    }
+  };
+  for (const scene of project.scenes) {
+    for (const node of scene.nodes) {
+      for (const [lang, text] of Object.entries(node.text)) {
+        checkSize(`scenes.${scene.name}.${node.id}.text.${lang}`, text);
+      }
+      for (const choice of node.choices) {
+        for (const [lang, text] of Object.entries(choice.text)) {
+          checkSize(`scenes.${scene.name}.${choice.id}.text.${lang}`, text);
+        }
+      }
+    }
+  }
+
+  // ---- 變數名不能撞到 TMP 的純字標記 ----
+  for (const variable of project.variables) {
+    if (TMP_BARE_TAGS.has(variable.id.toLowerCase())) {
+      warn(
+        `variables.${variable.id}`,
+        `變數名 "${variable.id}" 與 TextMeshPro 的標記同名 —— ` +
+          `台詞裡的 <${variable.id}> 會被當成插值換掉，那個標記就失效了。建議改個名字。`,
+      );
+    }
   }
 
   // ---- 唯一性 ----
