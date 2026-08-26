@@ -12,6 +12,9 @@ namespace StoryRuntime.Story {
 
     public sealed class StoryProject {
         [JsonProperty("meta")] public StoryMeta Meta;
+        // 標籤定義跟著專案走，runtime 不內建 —— 兩邊共用同一份才不會出現
+        // 「編輯器認得、遊戲不認得」的標籤。
+        [JsonProperty("tagRegistry")] public List<Tags.TagDef> TagRegistry = new List<Tags.TagDef>();
         [JsonProperty("variables")] public List<StoryVariable> Variables = new List<StoryVariable>();
         [JsonProperty("characters")] public List<StoryCharacter> Characters = new List<StoryCharacter>();
         [JsonProperty("scenes")] public List<StoryScene> Scenes = new List<StoryScene>();

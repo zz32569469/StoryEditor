@@ -19,7 +19,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="../../unity-runtime/Runtime/**/*.cs" />
+    <!--
+      排除 Runtime/Unity/：那一層引用 UnityEngine 與 TMP，只能在 Unity 裡編。
+      這個範圍必須跟 asmdef 的邊界一致 —— 不排除的話，核心層「零引擎依賴」
+      這件事就會在這裡編不過，而那正是這個 csproj 存在的意義。
+    -->
+    <Compile Include="../../unity-runtime/Runtime/**/*.cs"
+             Exclude="../../unity-runtime/Runtime/Unity/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -224,6 +224,65 @@ describe('匯入既有劇本格式', () => {
     expect(report.tagSyntax).toBe('brace');
   });
 
+  it('重新匯入時沿用既有的 id，只有新增的列才配新號', async () => {
+    // 每次匯入都重新配號的話，翻譯表的 row_key、存檔裡的節點位置、指向場景的
+    // 設定全部會在下一次匯入時對不上 —— 而且不會有任何錯誤訊息。
+    const data = await makeWorkbook(SAMPLE);
+    const first = await importLegacyWorkbook(data, '測試');
+    const again = await importLegacyWorkbook(data, '測試', first.project);
+
+    expect(again.project.scenes.map((s) => s.id)).toEqual(first.project.scenes.map((s) => s.id));
+
+    const idsOf = (p: typeof first.project) =>
+      p.scenes.flatMap((s) => s.nodes.map((n) => n.id));
+    expect(idsOf(again.project)).toEqual(idsOf(first.project));
+
+    const choiceIdsOf = (p: typeof first.project) =>
+      p.scenes.flatMap((s) => s.nodes.flatMap((n) => n.choices.map((c) => c.id)));
+    expect(choiceIdsOf(again.project)).toEqual(choiceIdsOf(first.project));
+
+    const branchIdsOf = (p: typeof first.project) =>
+      p.scenes.flatMap((s) => s.nodes.flatMap((n) => n.branches.map((b) => b.id)));
+    expect(branchIdsOf(again.project)).toEqual(branchIdsOf(first.project));
+  });
+
+  it('改了台詞內容，該列與其他列的 id 都不變', async () => {
+    const first = await importLegacyWorkbook(await makeWorkbook(SAMPLE), '測試');
+
+    const edited = structuredClone(SAMPLE);
+    edited['CH-0-序章']![0]!['內容'] = '改過的第一句。';
+    const again = await importLegacyWorkbook(await makeWorkbook(edited), '測試', first.project);
+
+    const before = first.project.scenes[0]!.nodes;
+    const after = again.project.scenes[0]!.nodes;
+    expect(after.map((n) => n.id)).toEqual(before.map((n) => n.id));
+    expect(after[0]!.text.zh).toBe('改過的第一句。');
+  });
+
+  it('新增的列會拿到新 id，不會誤用別人的', async () => {
+    const first = await importLegacyWorkbook(await makeWorkbook(SAMPLE), '測試');
+
+    const grown = structuredClone(SAMPLE);
+    grown['CH-0-序章']!.push({ 標誌: '#', ID: '99', 人物: 'guide', 內容: '後來加的。', 跳轉: '' });
+    const again = await importLegacyWorkbook(await makeWorkbook(grown), '測試', first.project);
+
+    const known = new Set(first.project.scenes[0]!.nodes.map((n) => n.id));
+    const added = again.project.scenes[0]!.nodes.find((n) => n.source?.id === '99')!;
+    expect(added).toBeDefined();
+    expect(known.has(added.id)).toBe(false);
+
+    // 其餘的仍然沿用。
+    const reused = again.project.scenes[0]!.nodes.filter((n) => known.has(n.id));
+    expect(reused).toHaveLength(first.project.scenes[0]!.nodes.length);
+  });
+
+  it('不給前一份專案時維持原本行為：每次都是新的 id', async () => {
+    const data = await makeWorkbook(SAMPLE);
+    const a = await importLegacyWorkbook(data, '測試');
+    const b = await importLegacyWorkbook(data, '測試');
+    expect(b.project.scenes[0]!.id).not.toBe(a.project.scenes[0]!.id);
+  });
+
   it('空白工作表列入提醒而非靜默略過', async () => {
     const data = await makeWorkbook({ ...SAMPLE, 'CH-2-空的': [] });
     const { report } = await importLegacyWorkbook(data, '測試');

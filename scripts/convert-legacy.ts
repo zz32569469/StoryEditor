@@ -6,10 +6,11 @@
  * 編輯器介面上的「匯入劇本 xlsx」做的是同一件事，兩者共用 src/legacy/import.ts。
  * 這支程式適合批次處理或想在轉檔前先看報告的情況。
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 
 import { importLegacyWorkbook } from '../src/legacy/import';
+import type { StoryProject } from '../src/schema/story';
 import { validateStoryProject } from '../src/schema/validate';
 
 const input = process.argv[2];
@@ -24,7 +25,27 @@ const output = resolve(process.argv[3] ?? `${name}.story.json`);
 
 const file = readFileSync(inputPath);
 const data = file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength) as ArrayBuffer;
-const { project, report } = await importLegacyWorkbook(data, name);
+/**
+ * 輸出檔已經存在就當成基準，沿用裡面的 id。
+ *
+ * 沒有這一步，每次重轉都會把所有 id 洗掉 —— 翻譯表對不回去、玩家的中途存檔
+ * 讀不回來、指向場景的設定全部失效，而且沒有任何錯誤訊息。
+ */
+let previous: StoryProject | null = null;
+if (existsSync(output)) {
+  try {
+    const parsed = validateStoryProject(JSON.parse(readFileSync(output, 'utf8')));
+    previous = parsed.project ?? null;
+    if (previous) {
+      const nodes = previous.scenes.reduce((n, s) => n + s.nodes.length, 0);
+      console.log(`沿用既有的 ${output}：${previous.scenes.length} 個場景、${nodes} 個節點的編號`);
+    }
+  } catch {
+    console.warn(`既有的 ${output} 讀不進來，這次會重新配發編號`);
+  }
+}
+
+const { project, report } = await importLegacyWorkbook(data, name, previous);
 
 console.log(`場景 ${report.scenes}，來源資料列 ${report.rows}`);
 console.log('節點：', Object.entries(report.nodesByKind).map(([k, v]) => `${k}=${v}`).join('  '));
