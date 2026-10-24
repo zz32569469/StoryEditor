@@ -2,9 +2,8 @@
 
 播放 StoryEditor 匯出的 `.story.json`。
 
-**目前只有核心層** —— 解析、求值、走訪、TMP 標記與逐字時間表都做好了，
-但**對話框、選項 UI、存檔接線還沒有**，也就是還沒有任何東西會出現在畫面上。
-見下方「還沒做的」。
+核心層（解析、求值、走訪、TMP 標記、逐字時間表）加上一套可換皮的預設對話介面（`StoryRuntime.UI`）。
+演出欄位（背景、插圖、畫面效果…）的寫法還在提案階段，見 [`docs/FORMAT.md` §3.5](../docs/FORMAT.md)。
 
 ## 為什麼核心層不引用 UnityEngine
 
@@ -22,6 +21,43 @@
 | `StoryRuntime.Expressions` | 條件與賦值的 tokenizer、Pratt parser、求值器 |
 | `StoryRuntime.Tags` | 特效標記解析、TMP rich text 轉換、逐字播放時間表 |
 | `StoryRuntime.Story` | `.story.json` 的 DTO、Newtonsoft 載入、走訪狀態機 |
+| `StoryRuntime.UI` | 預設對話介面（原型 UI25）：`StoryDialogueController`、`StoryPresenter`、`StoryDialogueView`、`StoryPortraitTable` |
+
+`StoryRuntime.UI` 引用 UnityEngine、uGUI 與 TextMeshPro，但**不依賴任何遊戲程式**。
+
+## 預設對話介面
+
+```csharp
+var controller = gameObject.AddComponent<StoryDialogueController>();
+controller.storyFile = storyJson;        // TextAsset
+controller.portraits = portraitTable;    // 立繪代號 → Sprite
+controller.font      = cjkFont;          // 中文劇本要指定有中文字的 TMP 字型
+yield return controller.Play("第一章");   // 用工作表名稱找場景，播完才回來
+```
+
+- **閱讀規則**（原型 UI25）：每字 35ms、句末標點之後停 150ms；點一下先補完當句，完整後再點才前進；
+  AUTO 整句顯示完後停 max(1400, min(5000, 字數×65)) ms，每次新對話重設為關，分支與輸入不代選。
+- **外觀**：對話框左右距 48、下距 22、高 146～310、文字 19px 行高 1.7，文字區與分支列表超過 240 就捲動；
+  名稱牌在左上、AUTO 在右上；立繪寬 344、頂距與右距 104，不是立繪主人說話時下移 10px；
+  旁白、系統、內心話（`… os`／`… mind`）套全景色罩 `#17222c20`。原型的數值以 1024×768 設計，畫布 1280×960 一律 ×1.25。
+- **說話者規則**：`StorySpeakerRules` 決定誰算旁白類、名牌寫什麼（`mc`／`player` 與其內心話寫「我」、
+  `店長 os` 寫「店長」）。各作品用 `Override` 加自己的對照。
+- **換皮**：實作 `IStoryDialogueView`，用 `controller.UseView(...)` 換掉。Presenter 只認介面，計時在 View、判斷在 Presenter。
+- **遊戲接線**：`Opened`／`Closed` 事件讓遊戲藏自己的 HUD；變數傳自己的 `IStoryVariables` 才會進存檔。
+- 鍵盤（Space／Enter 前進、Esc 關 AUTO）只接舊版 Input Manager；只開新版 Input System 的專案要自己把按鍵接上。
+
+## 示範專案
+
+[`samples/unity-demo`](../samples/unity-demo) 是只引用這個套件的最小 Unity 專案（6000.4.4f1），
+用來跑 Play Mode 驗證與截圖。第一次開啟前先跑一次設定（匯入 TMP 基本資源、建立立繪表與示範場景）：
+
+```bash
+Unity -batchmode -projectPath samples/unity-demo -executeMethod StoryDemo.Editor.DemoSetup.Run
+Unity -batchmode -projectPath samples/unity-demo -runTests -testPlatform EditMode -testResults results.xml
+```
+
+套件自己的 EditMode 測試（`Tests/Editor`）透過示範專案的 `testables` 一起跑；截圖寫到 `samples/unity-demo/Screenshots/`。
+示範專案不附字型檔，執行期從系統字型（微軟正黑體等）建立動態 TMP 字型。
 
 ## 變數由遊戲擁有
 
@@ -153,10 +189,10 @@ cd tools/csharp/StoryRuntime.Tests && dotnet test
 
 ## 還沒做的
 
-- 對話 UI（TMP 對話框、選項、把時間表接上 coroutine）
-- `sfx` 的音效 hook、立繪與音效鍵怎麼對應美術資產
-- `shake`／`wave` 的逐頂點動畫（現有劇本 0 次使用，刻意延後）
-- 與遊戲既有 StoryManager 的接線
+- 演出欄位（背景、插圖、畫面效果、效果音、OST、屬性變化…）：寫法提案待確認（FORMAT.md §3.5）
+- 多人立繪的左中右位置、進退場
+- `shake`／`wave` 的逐頂點動畫
+- 閱讀輔助：對話紀錄、快轉讀過的句子、隱藏對話框、文字速度設定
 
 ## 已知的落差
 

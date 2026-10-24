@@ -33,3 +33,21 @@ dist-ssr
 # .NET 測試專案的建置產物（核心層原始碼在 unity-runtime/，這裡只是編譯出口）
 tools/csharp/**/bin/
 tools/csharp/**/obj/
+
+# Unity 示範專案（samples/unity-demo）的產生物；專案設定、Assets 與 Packages/manifest.json 才進版控
+samples/unity-demo/[Ll]ibrary/
+samples/unity-demo/[Tt]emp/
+samples/unity-demo/[Ll]ogs/
+samples/unity-demo/[Oo]bj/
+samples/unity-demo/[Bb]uild/
+samples/unity-demo/[Uu]ser[Ss]ettings/
+samples/unity-demo/*.csproj
+samples/unity-demo/*.sln
+samples/unity-demo/*.slnx
+samples/unity-demo/.vs/
+samples/unity-demo/Screenshots/
+# TMP 的基本資源由示範專案的設定腳本在第一次開啟時匯入，不進版控
+samples/unity-demo/Assets/TextMesh Pro/
+samples/unity-demo/Assets/TextMesh Pro.meta
+# 示範專案自己的測試劇本（中性內容）放行
+!samples/unity-demo/Assets/Demo/Stories/*.story.json

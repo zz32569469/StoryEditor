@@ -1,0 +1,12 @@
+{
+  "name": "StoryDemo",
+  "rootNamespace": "StoryDemo",
+  "references": [
+    "StoryRuntime",
+    "StoryRuntime.Unity",
+    "StoryRuntime.UI",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true
+}

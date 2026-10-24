@@ -1,0 +1,19 @@
+{
+  "name": "StoryRuntime.UI",
+  "rootNamespace": "StoryRuntime.UI",
+  "references": [
+    "StoryRuntime",
+    "StoryRuntime.Unity",
+    "Unity.TextMeshPro",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
