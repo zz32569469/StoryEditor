@@ -6,7 +6,7 @@
       "zh"
     ],
     "baseLanguage": "zh",
-    "updatedAt": "2026-10-24T11:52:00.829Z",
+    "updatedAt": "2026-10-24T12:06:57.807Z",
     "tagSyntax": "bracket"
   },
   "tagRegistry": [
@@ -168,7 +168,8 @@
       "id": "newcomerName",
       "type": "string",
       "default": "",
-      "description": ""
+      "description": "輸入欄的標題",
+      "label": "新人的名字"
     },
     {
       "id": "practice",

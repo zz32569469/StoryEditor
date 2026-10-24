@@ -78,6 +78,7 @@ namespace StoryDemo.Tests {
             Assert.IsNull(controller.LastError);
             Assert.AreEqual(17, log.Lines.Count, string.Join("\n", log.Lines));
             CollectionAssert.AreEqual(new[] { 2 }, log.ChoiceCounts, "「我想調整菜單」要信任 3，還沒解鎖");
+            CollectionAssert.AreEqual(new[] { "新人的名字" }, log.InputLabels, "輸入欄標題用屬性清單的名稱，不是變數名稱");
 
             LineSnapshot Early(string start) => log.Early[log.Lines.FindIndex(l => l.StartsWith(start))];
             LineSnapshot Settled(string start) => log.Settled[log.Lines.FindIndex(l => l.StartsWith(start))];

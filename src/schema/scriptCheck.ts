@@ -14,7 +14,9 @@ import type { ValidationIssue } from './validate';
 export function checkScript(project: StoryProject): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const table = attributeTable(project.variables);
-  const known = [...new Set(project.variables.map((v) => v.label?.trim()).filter(Boolean))];
+  const known = [
+    ...new Set(project.variables.filter((v) => v.type === 'number').map((v) => v.label?.trim()).filter(Boolean)),
+  ];
 
   const check = (sheet: string, id: string, stage: Stage | undefined) => {
     if (!stage) return;
@@ -23,7 +25,16 @@ export function checkScript(project: StoryProject): ValidationIssue[] {
       issues.push({ level: 'error', path: `${sheet} / ID ${id}`, message });
     }
     for (const change of parsed.attributes) {
-      if (table.has(change.name)) continue;
+      const variable = table.get(change.name);
+      if (variable && variable.type !== 'number') {
+        issues.push({
+          level: 'error',
+          path: `${sheet} / ID ${id} / ${STAGE_COLUMNS.attributes[0]}`,
+          message: `屬性變化「${change.name}」對到的變數 ${variable.id} 不是數字，不能加減`,
+        });
+        continue;
+      }
+      if (variable) continue;
       issues.push({
         level: 'error',
         path: `${sheet} / ID ${id} / ${STAGE_COLUMNS.attributes[0]}`,

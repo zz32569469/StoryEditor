@@ -247,6 +247,20 @@ namespace StoryRuntime.UI.Tests {
         }
 
         [Test]
+        public void Input_LabelPrefersAttributeNameThenDescriptionThenId() {
+            var opening = _project.Variables.Single(v => v.Id == "opening");
+            var p = new StoryPresenter(_view, _project, _vars, _table);
+            opening.Label = "開幕的日子";
+            p.Resume("s", "i");
+            Assert.AreEqual("開幕的日子", _view.Inputs.Single().Label, "屬性清單的名稱優先");
+
+            opening.Label = null; opening.Description = "";
+            p.Resume("s", "i");
+            Assert.AreEqual("opening", _view.Inputs.Single().Label, "都沒寫才退回變數名稱");
+            p.Dispose();
+        }
+
+        [Test]
         public void MissingSceneLogsErrorAndCloses() {
             var p = new StoryPresenter(_view, _project, _vars, _table);
             LogAssert.Expect(LogType.Error, new Regex("找不到場景"));

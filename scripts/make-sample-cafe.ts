@@ -62,10 +62,11 @@ const SCENE: Row[] = [
 ];
 
 const ATTRIBUTES = [
-  ['屬性名稱', '變數', '預設值', '說明'],
-  ['信任', 'trust', '0', '店長對新人的信任'],
-  ['幹勁', 'motivation', '0', '新人的幹勁'],
-  ['熟練度EXP', 'skillExp', '0', '做咖啡的熟練度經驗值'],
+  ['屬性名稱', '變數', '預設值', '說明', '型別'],
+  ['信任', 'trust', '0', '店長對新人的信任', ''],
+  ['幹勁', 'motivation', '0', '新人的幹勁', ''],
+  ['熟練度EXP', 'skillExp', '0', '做咖啡的熟練度經驗值', ''],
+  ['新人的名字', 'newcomerName', '', '輸入欄的標題', '文字'],
 ];
 
 const workbook = new ExcelJS.Workbook();

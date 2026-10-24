@@ -67,6 +67,12 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
     return 'text';
   };
 
+  /** 給玩家看的標題：屬性名稱 → 說明 → 變數名稱。 */
+  const inputLabelOf = (name: string) => {
+    const declared = project.variables.find((v) => v.id === name);
+    return declared?.label?.trim() || declared?.description?.trim() || name;
+  };
+
   const inputPlaceholderOf = (name: string) => {
     switch (typeOf(name)) {
       case 'date':
@@ -176,7 +182,7 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
             <div className="dialogue-speaker">請輸入</div>
             {state.pendingInputs.map((name) => (
               <label key={name} className="field">
-                <span>{name}</span>
+                <span>{inputLabelOf(name)}</span>
                 <input
                   type={inputTypeOf(name)}
                   value={inputs[name] ?? ''}

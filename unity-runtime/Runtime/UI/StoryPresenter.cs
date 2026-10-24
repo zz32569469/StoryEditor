@@ -406,7 +406,10 @@ namespace StoryRuntime.UI {
 
         StoryVariable DeclaredOf(string name) => _project.Variables.Find(v => v.Id == name);
 
+        // 給玩家看的標題：屬性名稱 → 說明 → 變數名稱（變數名稱是英數 id，玩家看不懂，只當最後退路）
         static string InputLabelOf(string name, StoryVariable declared) =>
-            string.IsNullOrWhiteSpace(declared?.Description) ? name : declared.Description;
+            !string.IsNullOrWhiteSpace(declared?.Label) ? declared.Label.Trim()
+            : !string.IsNullOrWhiteSpace(declared?.Description) ? declared.Description
+            : name;
     }
 }
