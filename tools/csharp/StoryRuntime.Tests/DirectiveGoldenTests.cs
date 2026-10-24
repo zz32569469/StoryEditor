@@ -23,7 +23,7 @@ namespace StoryRuntime.Tests {
             JToken item = Golden["directives"][index];
             var stage = item["stage"].ToObject<StoryStage>();
             JToken expected = item["parsed"];
-            JObject actual = Encode(StageParser.Parse(stage));
+            JObject actual = Encode(StageParser.Parse(stage, (string)item["portrait"]));
 
             Assert.True(JToken.DeepEquals(expected, actual),
                 $"「{item["stage"].ToString(Newtonsoft.Json.Formatting.None)}」解析不同\nTS：{expected}\nC#：{actual}");
@@ -48,6 +48,10 @@ namespace StoryRuntime.Tests {
                 ["attributes"] = attributes,
                 ["items"] = items,
                 ["unlocks"] = new JArray(parsed.Unlocks.ToArray()),
+                ["portraits"] = new JArray(parsed.Portraits.ConvertAll(p => (JToken)new JObject { ["who"] = Str(p.Who), ["key"] = Str(p.Key) }).ToArray()),
+                ["positions"] = new JArray(parsed.Positions.ConvertAll(p => (JToken)new JObject { ["who"] = Str(p.Who), ["slot"] = p.Slot }).ToArray()),
+                ["portraitEffects"] = new JArray(parsed.PortraitEffects.ConvertAll(e =>
+                    (JToken)new JObject { ["who"] = Str(e.Who), ["name"] = e.Name, ["seconds"] = Num(e.Seconds) }).ToArray()),
                 ["issues"] = new JArray(parsed.Issues.ToArray()),
             };
             if (parsed.Background != null) json["background"] = new JObject { ["key"] = Str(parsed.Background.Key) };

@@ -45,6 +45,10 @@ namespace StoryRuntime.UI {
         const float TextMin = 58 * S, ListMax = TextMax, Gap = 10 * S;
         public const float PortraitWidth = 344 * S;
         public const float PortraitInset = 104 * S;   // 立繪頂距與右距
+        // 「右」就是原型 UI25 的單人立繪位置；「左」對稱、「中」置中
+        public const float SlotOffset    = 512 * S - PortraitInset - PortraitWidth / 2;
+        public const float SlideDistance = 200 * S;   // 滑入滑出的距離
+        const float MoveSeconds = 0.3f;
         const float PortraitDropPx = 10 * S;
         const float PortraitEase = 0.2f, ShadeEase = 0.22f;
 
@@ -81,14 +85,14 @@ namespace StoryRuntime.UI {
         TMP_FontAsset _font;
         Material _textMaterial;
 
-        RectTransform _root, _stage, _portraitRt, _card, _nameTag, _auto, _nextRt, _lidTop, _lidBottom;
+        RectTransform _root, _stage, _portraitLayer, _card, _nameTag, _auto, _nextRt, _lidTop, _lidBottom;
         CrossfadeLayer _background, _cg;
         Image _curtain, _flash;
         readonly Tween _curtainAlpha = new Tween(), _flashAlpha = new Tween(), _eyes = new Tween(1), _shake = new Tween();
         float _shakeStrength;
         bool _closeEyesToBlack;
         RectTransform _bodyView, _bodyContent, _listView, _listContent, _input, _inputFields;
-        Image _portrait, _shade, _autoFill, _autoEdge, _autoDot, _next;
+        Image _shade, _autoFill, _autoEdge, _autoDot, _next;
         TextMeshProUGUI _name, _body, _autoLabel, _inputError;
         ScrollRect _listScroll;
 
@@ -97,8 +101,10 @@ namespace StoryRuntime.UI {
         TypewriterSchedule _schedule;
         float _elapsed;
         int _revealed;
-        bool _lineShownPending, _autoOn, _speaking = true, _narrative, _layoutDirty;
-        float _autoRemaining = -1, _portraitY, _shadeAlpha;
+        bool _lineShownPending, _autoOn, _narrative, _layoutDirty;
+        float _autoRemaining = -1, _shadeAlpha;
+        string _speakerWho;
+        readonly List<PortraitActor> _actors = new List<PortraitActor>();
 
         public bool IsTyping => _schedule != null && _elapsed < _schedule.Total;
         public bool IsOpen => _root != null && _root.gameObject.activeSelf;
@@ -112,7 +118,30 @@ namespace StoryRuntime.UI {
         public float FlashAlpha => _flashAlpha.Value;
         public float EyesOpen => _eyes.Value;
         public RectTransform Card => _card;
-        public RectTransform Portrait => _portraitRt;
+        public RectTransform PortraitLayer => _portraitLayer;
+
+        public readonly struct PortraitInfo {
+            public readonly string Who, Sprite, Slot;
+            public readonly float X, Drop, Alpha;
+            public readonly bool Leaving;
+            public PortraitInfo(string who, string sprite, string slot, float x, float drop, float alpha, bool leaving) {
+                Who = who; Sprite = sprite; Slot = slot; X = x; Drop = drop; Alpha = alpha; Leaving = leaving;
+            }
+        }
+
+        // 場上的立繪（含正在退場的），依出場順序
+        public List<PortraitInfo> Portraits {
+            get {
+                var list = new List<PortraitInfo>();
+                foreach (var a in _actors) {
+                    list.Add(new PortraitInfo(a.Who, a.Image.sprite != null ? a.Image.sprite.name : null, a.Slot,
+                                              a.X.Value, a.Y, a.Alpha.Value, a.Leaving));
+                }
+                return list;
+            }
+        }
+
+        public static float SlotX(string slot) => slot == "左" ? -SlotOffset : slot == "中" ? 0 : SlotOffset;
 
         // ── 建立 ─────────────────────────────────────────────
 
@@ -127,12 +156,7 @@ namespace StoryRuntime.UI {
 
             // 由下而上：背景 → 立繪 → 插圖 → 情境遮罩 → 黑幕 → 眼皮 → 閃白 → 對話框
             _background = new CrossfadeLayer(_stage, "Background");
-            _portraitRt = StoryUiKit.Rect("Portrait", _stage);
-            _portraitRt.anchorMin = _portraitRt.anchorMax = _portraitRt.pivot = Vector2.one;
-            _portrait = _portraitRt.gameObject.AddComponent<Image>();
-            _portrait.preserveAspect = true;
-            _portrait.raycastTarget = false;
-            _portrait.enabled = false;
+            _portraitLayer = StoryUiKit.Stretch(StoryUiKit.Rect("Portraits", _stage));
 
             _cg = new CrossfadeLayer(_stage, "CG");
 
@@ -335,7 +359,7 @@ namespace StoryRuntime.UI {
             _narrative = false;
             _shadeAlpha = 0;
             _shade.color = Color.clear;
-            _portraitY = 0;   // 下一幀直接放到定位，不從上一場對話的位置滑過來
+            ClearPortraits();
         }
 
         public void Close() {
@@ -343,7 +367,7 @@ namespace StoryRuntime.UI {
             _lineShownPending = false;
             _autoRemaining = -1;
             _body.text = "";
-            _portrait.enabled = false;
+            ClearPortraits();
             ShowChoices(Array.Empty<StoryChoiceItem>());
             ShowInput(Array.Empty<StoryInputItem>());
             _root.gameObject.SetActive(false);
@@ -437,16 +461,116 @@ namespace StoryRuntime.UI {
             _layoutDirty = true;
         }
 
-        public void SetPortrait(Sprite sprite) {
-            _portrait.sprite = sprite;
-            _portrait.enabled = sprite != null;
-            if (sprite == null) return;
+        // ── 立繪 ─────────────────────────────────────────────
+
+        public void ShowPortrait(string who, Sprite sprite, string slot) {
+            var actor = Find(who);
+            if (actor == null) {
+                actor = new PortraitActor(who, _portraitLayer, slot, PortraitDrop(who == _speakerWho));
+                _actors.Add(actor);
+            } else if (actor.Leaving) {
+                // 退場途中又叫回來：停在目前位置，淡回來
+                actor.Leaving = false;
+                actor.Alpha.To(1, MoveSeconds);
+            }
+            actor.Image.sprite = sprite;
             // 寬 344、高度照原圖比例
             float aspect = sprite.rect.height / Mathf.Max(1, sprite.rect.width);
-            _portraitRt.sizeDelta = new Vector2(PortraitWidth, PortraitWidth * aspect);
+            actor.Rt.sizeDelta = new Vector2(PortraitWidth, PortraitWidth * aspect);
+            if (actor.Slot != slot) MovePortrait(who, slot);
         }
 
-        public void SetPortraitSpeaking(bool speaking) => _speaking = speaking;
+        public void MovePortrait(string who, string slot) {
+            var actor = Find(who);
+            if (actor == null || actor.Leaving) return;
+            actor.Slot = slot;
+            actor.X.To(SlotX(slot), MoveSeconds);
+        }
+
+        public void PlayPortraitEffect(string who, string effect, float seconds) {
+            var actor = Find(who);
+            if (actor == null) return;
+            float home = SlotX(actor.Slot);
+            switch (effect) {
+                case "淡入":
+                    actor.Leaving = false;
+                    actor.X.Set(home);
+                    actor.Alpha.Set(0); actor.Alpha.To(1, seconds);
+                    break;
+                case "左滑入":
+                case "右滑入":
+                    actor.Leaving = false;
+                    actor.X.Set(home + (effect == "左滑入" ? -SlideDistance : SlideDistance)); actor.X.To(home, seconds);
+                    actor.Alpha.Set(0); actor.Alpha.To(1, seconds);
+                    break;
+                case "淡出":
+                    actor.Leaving = true;
+                    actor.Alpha.To(0, seconds);
+                    break;
+                case "左滑出":
+                case "右滑出":
+                    actor.Leaving = true;
+                    actor.X.To(actor.X.Value + (effect == "左滑出" ? -SlideDistance : SlideDistance), seconds);
+                    actor.Alpha.To(0, seconds);
+                    break;
+            }
+        }
+
+        public void RemovePortrait(string who) {
+            var actor = Find(who);
+            if (actor == null) return;
+            _actors.Remove(actor);
+            Destroy(actor.Rt.gameObject);
+        }
+
+        public void SetSpeaker(string who) => _speakerWho = who;
+
+        void ClearPortraits() {
+            foreach (var actor in _actors) Destroy(actor.Rt.gameObject);
+            _actors.Clear();
+            _speakerWho = null;
+        }
+
+        PortraitActor Find(string who) => _actors.Find(a => a.Who == who);
+
+        void UpdatePortraits(float dt) {
+            for (int i = _actors.Count - 1; i >= 0; i -= 1) {
+                var actor = _actors[i];
+                actor.X.Tick(dt);
+                actor.Alpha.Tick(dt);
+                // 發話者位移 200ms
+                actor.Y = Mathf.MoveTowards(actor.Y, PortraitDrop(actor.Who == _speakerWho), PortraitDropPx / PortraitEase * dt);
+                actor.Rt.anchoredPosition = new Vector2(actor.X.Value, -PortraitInset - actor.Y);
+                SetAlpha(actor.Image, actor.Alpha.Value);
+                if (actor.Leaving && actor.Alpha.Done) {
+                    _actors.RemoveAt(i);
+                    Destroy(actor.Rt.gameObject);
+                }
+            }
+        }
+
+        sealed class PortraitActor {
+            public readonly string Who;
+            public readonly RectTransform Rt;
+            public readonly Image Image;
+            public readonly Tween X, Alpha = new Tween(1);
+            public string Slot;
+            public float Y;
+            public bool Leaving;
+
+            public PortraitActor(string who, RectTransform layer, string slot, float drop) {
+                Who = who;
+                Slot = slot;
+                Y = drop;   // 一出場就在定位，不從別處滑過來
+                X = new Tween(SlotX(slot));
+                Rt = StoryUiKit.Rect(who, layer);
+                Rt.anchorMin = Rt.anchorMax = Rt.pivot = new Vector2(0.5f, 1);
+                Rt.anchoredPosition = new Vector2(X.Value, -PortraitInset - Y);
+                Image = Rt.gameObject.AddComponent<Image>();
+                Image.preserveAspect = true;
+                Image.raycastTarget = false;
+            }
+        }
         public void SetNarrative(bool narrative) => _narrative = narrative;
 
         public void SetAuto(bool on) {
@@ -650,10 +774,8 @@ namespace StoryRuntime.UI {
             next.a = IsTyping ? 0.35f : 1;
             _next.color = next;
 
-            // 發話者位移 200ms、遮罩淡入淡出 220ms
-            float targetY = -PortraitInset - PortraitDrop(_speaking);
-            _portraitY = Mathf.MoveTowards(_portraitY == 0 ? targetY : _portraitY, targetY, PortraitDropPx / PortraitEase * dt);
-            _portraitRt.anchoredPosition = new Vector2(-PortraitInset, _portraitY);
+            UpdatePortraits(dt);
+            // 遮罩淡入淡出 220ms
             _shadeAlpha = Mathf.MoveTowards(_shadeAlpha, _narrative ? 1 : 0, dt / ShadeEase);
             var shade = ShadeColor;
             shade.a *= _shadeAlpha;

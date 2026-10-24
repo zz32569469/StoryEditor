@@ -70,7 +70,7 @@ namespace StoryDemo.Tests {
             var shots = new Screenshotter(ShotDir, objects);
             var log = new UiLog();
             // 有轉場或效果的句子多截一張「剛出現」的畫面
-            var effectLines = new HashSet<int> { 0, 4, 7, 8, 11, 13, 14, 15, 16 };
+            var effectLines = new HashSet<int> { 0, 1, 2, 4, 7, 8, 9, 10, 12, 13, 14, 15, 16 };
             yield return PlayModeDriver.Drive(() => done, log, new Dictionary<string, string> { ["newcomerName"] = "小林" },
                                               shots, 120f, i => effectLines.Contains(i));
 
@@ -78,6 +78,7 @@ namespace StoryDemo.Tests {
             Assert.IsNull(controller.LastError);
             Assert.AreEqual(17, log.Lines.Count, string.Join("\n", log.Lines));
             CollectionAssert.AreEqual(new[] { 2 }, log.ChoiceCounts, "「我想調整菜單」要信任 3，還沒解鎖");
+            CollectionAssert.AreEqual(new[] { "新人的名字" }, log.InputLabels, "輸入欄標題用屬性清單的名稱，不是變數名稱");
 
             LineSnapshot Early(string start) => log.Early[log.Lines.FindIndex(l => l.StartsWith(start))];
             LineSnapshot Settled(string start) => log.Settled[log.Lines.FindIndex(l => l.StartsWith(start))];
@@ -98,6 +99,28 @@ namespace StoryDemo.Tests {
             Assert.AreEqual(1, Settled("第一天的準備完成了").Curtain, 0.01f, "黑幕立刻全黑");
             Assert.That(Early("傍晚").Curtain, Is.InRange(0.01f, 0.99f), "淡入進行中");
             Assert.That(Early("（明天會是").Eyes, Is.LessThan(0.99f), "閉眼進行中");
+
+            // 立繪：左中右站位、進退場、同時多人
+            float slot = StoryDialogueView.SlotOffset;
+            var manager = Settled("早安").Actor("店長").Value;
+            Assert.AreEqual("左", manager.Slot);
+            Assert.AreEqual(-slot, manager.X, 0.5f);
+            Assert.Less(Early("早安").Actor("店長").Value.Alpha, 0.99f, "淡入進行中");
+            var sliding = Early("是、是的").Actor("新人").Value;
+            Assert.Greater(sliding.X, slot + 1, "右滑入：從右邊外側滑進來");
+            Assert.AreEqual(2, Settled("是、是的").Cast, "店長與新人同時在場");
+            Assert.AreEqual(slot, Settled("是、是的").Actor("新人").Value.X, 0.5f);
+            Assert.AreEqual(0, Settled("好燙").Actor("新人").Value.X, 0.5f, "位置「中」：新人移到中間");
+            var three = Settled("請問");
+            Assert.AreEqual(3, three.Cast, "三人同時在場");
+            Assert.AreEqual("右", three.Actor("熟客").Value.Slot);
+            Assert.AreEqual(0, three.Actor("熟客").Value.Drop, 0.5f, "說話的人在原位");
+            Assert.Greater(three.Actor("店長").Value.Drop, 1, "其他人往下移");
+            Assert.AreEqual(0, Settled("抱歉").Actor("店長").Value.Drop, 0.5f);
+            Assert.IsNull(Settled("好，明天見").Actor("熟客"), "右滑出之後離場");
+            Assert.IsNull(Settled("（開幕之後").Actor("店長"), "「店長：左滑出」指定別人退場");
+            Assert.AreEqual(1, Settled("（開幕之後").Cast);
+            Assert.AreEqual(0, Settled("傍晚").Portraits.Count, "「新人：無」立刻離場");
 
             // 名牌：旁白、店長、新人、內心話寫本人、系統
             Assert.AreEqual("旁白", log.Speakers[0]);

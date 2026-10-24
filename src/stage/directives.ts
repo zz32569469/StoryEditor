@@ -61,6 +61,35 @@ export interface ItemChange {
   count: number;
 }
 
+/** 立繪站位。沒寫過位置的角色站哪裡由播放端決定（Unity 預設皮膚：右，跟原型 UI25 的單人立繪一樣）。 */
+export const PORTRAIT_SLOTS = ['左', '中', '右'] as const;
+export type PortraitSlot = (typeof PORTRAIT_SLOTS)[number];
+
+/** 立繪進退場。「淡出」與「滑出」播完之後該角色離場。 */
+export const PORTRAIT_EFFECTS = ['淡入', '淡出', '左滑入', '右滑入', '左滑出', '右滑出'] as const;
+export const PORTRAIT_EFFECT_SECONDS = 0.3;
+
+/**
+ * 立繪、位置、立繪效果三欄都可以寫「角色：內容」指定別人；不寫角色就是這一列的說話者（who 為 null）。
+ * who 是劇本人物欄寫的名字（例「熟客」），不是角色 id。
+ */
+export interface PortraitCommand {
+  who: string | null;
+  /** null = 「無」：該角色立刻離場。 */
+  key: string | null;
+}
+
+export interface PositionCommand {
+  who: string | null;
+  slot: PortraitSlot;
+}
+
+export interface PortraitEffectCommand {
+  who: string | null;
+  name: (typeof PORTRAIT_EFFECTS)[number];
+  seconds: number;
+}
+
 export interface ParsedStage {
   /** undefined = 這一列沒寫；key 為 null = 「無」（換成全黑）。 */
   background?: { key: string | null };
@@ -72,6 +101,9 @@ export interface ParsedStage {
   items: ItemChange[];
   unlocks: string[];
   target?: string;
+  portraits: PortraitCommand[];
+  positions: PositionCommand[];
+  portraitEffects: PortraitEffectCommand[];
   issues: string[];
 }
 
@@ -168,7 +200,84 @@ function parseItems(text: string | undefined, issues: string[]): ItemChange[] {
   return items;
 }
 
-export function parseStage(stage: Stage | undefined): ParsedStage {
+const WHO = /^([^：:]*)[：:](.*)$/;
+
+function withWho(part: string, column: string, issues: string[]): { who: string | null; value: string } | null {
+  const match = WHO.exec(part);
+  if (!match) return { who: null, value: part };
+  const who = match[1]!.trim();
+  const value = match[2]!.trim();
+  if (!who || !value) {
+    issues.push(`${column}「${part}」冒號前寫角色、冒號後寫內容`);
+    return null;
+  }
+  return { who, value };
+}
+
+function parsePortraits(text: string | undefined, issues: string[]): PortraitCommand[] {
+  const commands: PortraitCommand[] = [];
+  for (const part of split(text)) {
+    const parsed = withWho(part, '立繪', issues);
+    if (!parsed) continue;
+    if (parsed.value === NONE) {
+      commands.push({ who: parsed.who, key: null });
+      continue;
+    }
+    if (/\s/.test(parsed.value)) issues.push(`立繪「${part}」只能寫一個代號`);
+    commands.push({ who: parsed.who, key: parsed.value });
+  }
+  return commands;
+}
+
+function parsePositions(text: string | undefined, issues: string[]): PositionCommand[] {
+  const commands: PositionCommand[] = [];
+  for (const part of split(text)) {
+    const parsed = withWho(part, '位置', issues);
+    if (!parsed) continue;
+    const slot = PORTRAIT_SLOTS.find((s) => s === parsed.value);
+    if (!slot) {
+      issues.push(`位置「${part}」只能寫${PORTRAIT_SLOTS.join('、')}`);
+      continue;
+    }
+    commands.push({ who: parsed.who, slot });
+  }
+  return commands;
+}
+
+function parsePortraitEffects(text: string | undefined, issues: string[]): PortraitEffectCommand[] {
+  const commands: PortraitEffectCommand[] = [];
+  for (const part of split(text)) {
+    const parsed = withWho(part, '立繪效果', issues);
+    if (!parsed) continue;
+    const [head, secondsRaw, ...extra] = words(parsed.value);
+    const name = PORTRAIT_EFFECTS.find((e) => e === head);
+    if (!name) {
+      issues.push(`立繪效果「${head}」不認得（可用：${PORTRAIT_EFFECTS.join('、')}）`);
+      continue;
+    }
+    if (extra.length > 0) {
+      issues.push(`立繪效果「${part}」參數太多，最多 1 個（秒數）`);
+      continue;
+    }
+    let seconds = PORTRAIT_EFFECT_SECONDS;
+    if (secondsRaw !== undefined) {
+      const value = parseNumber(secondsRaw);
+      if (value === null) {
+        issues.push(`立繪效果「${part}」的秒數「${secondsRaw}」不是數字`);
+        continue;
+      }
+      seconds = value;
+    }
+    commands.push({ who: parsed.who, name, seconds });
+  }
+  return commands;
+}
+
+/**
+ * @param portrait 這一列的「立繪」欄（存在 node.portrait，不在 stage 裡）；
+ *   跟位置、立繪效果一起解析，才能一次決定誰在哪裡、怎麼進場。
+ */
+export function parseStage(stage: Stage | undefined, portrait?: string): ParsedStage {
   const issues: string[] = [];
   const attributes = parseAttributeChanges(stage?.attributes ?? '');
   for (const part of attributes.malformed) {
@@ -180,6 +289,9 @@ export function parseStage(stage: Stage | undefined): ParsedStage {
     attributes: attributes.changes,
     items: parseItems(stage?.items, issues),
     unlocks: split(stage?.unlocks),
+    portraits: [],
+    positions: [],
+    portraitEffects: [],
     issues,
   };
   const background = keyOrNone(stage?.background, '背景', issues);
@@ -190,6 +302,9 @@ export function parseStage(stage: Stage | undefined): ParsedStage {
   if (bgm) parsed.bgm = bgm;
   const target = stage?.target?.trim();
   if (target) parsed.target = target;
+  parsed.portraits = parsePortraits(portrait, issues);
+  parsed.positions = parsePositions(stage?.position, issues);
+  parsed.portraitEffects = parsePortraitEffects(stage?.portraitEffect, issues);
   return parsed;
 }
 

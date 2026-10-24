@@ -76,8 +76,9 @@ namespace StoryRuntime.UI {
         readonly TmpMarkup _markup = TmpMarkup.CreateDefault();
         readonly string _lang;
 
-        string _lastPortrait;
-        string _portraitOwner;   // 立繪屬於哪個角色：設定那張立繪的那一句的說話者
+        // 立繪：誰在場上、用哪張；每個角色最後一次寫的位置（離場後再出場還站那裡）
+        readonly Dictionary<string, string> _shown = new Dictionary<string, string>();
+        readonly Dictionary<string, string> _slotOf = new Dictionary<string, string>();
         int _lineChars;
         ParsedText _parsed;
         int _revealedChars;
@@ -86,6 +87,9 @@ namespace StoryRuntime.UI {
         public StorySpriteTable Backgrounds { get; set; }
         public StorySpriteTable Cgs { get; set; }
         public IStoryAudio Audio { get; set; }
+
+        // 沒寫過位置的角色站哪裡。預設「右」= 原型 UI25 的單人立繪位置，只有一個人的劇本看起來跟以前一樣
+        public string DefaultSlot { get; set; } = "右";
 
         // 交給遊戲的事件：屬性變化（runtime 已依屬性清單套用到變數）、物品消耗、功能解鎖、
         // 舊寫法的輸入提示（畫面效果欄的 OpenNameInput 之類，Key 為 Name／Birthday／Level）
@@ -142,15 +146,15 @@ namespace StoryRuntime.UI {
             BeginDialogue();
             State = StoryPlayer.ResumeAt(_project, sceneId, nodeId, _variables, _options);
             // 讀檔回到的那一句不一定有立繪、背景，往回找最近一次的設定，不然畫面會空著直到下一次換圖
-            RestorePortrait(sceneId, nodeId);
+            RestorePortraits(sceneId, nodeId);
             RestoreStage(sceneId, nodeId);
             Present();
         }
 
         // 每次開始新對話 AUTO 一律關閉，不沿用上一次
         void BeginDialogue() {
-            _lastPortrait = null;
-            _portraitOwner = null;
+            _shown.Clear();
+            _slotOf.Clear();
             Auto = false;
             _view.Open();
             _view.SetAuto(false);
@@ -249,9 +253,10 @@ namespace StoryRuntime.UI {
             var node = StoryPlayer.CurrentNode(_project, State);
             string label = LabelOf(node.Speaker);
             bool narrative = _speakers.IsNarrative(label);
-            UpdatePortrait(node, narrative);
+            string who = _speakers.DisplayName(label);
+            ApplyPortraits(node, who, instant: false);
             _view.SetNarrative(narrative);
-            _view.SetPortraitSpeaking(!narrative && _portraitOwner != null && node.Speaker == _portraitOwner);
+            _view.SetSpeaker(narrative ? null : who);
 
             if (State.Status == PlayerStatus.Input) {
                 // 輸入節點沒有台詞：保留上一句（通常就是在問這個問題）
@@ -363,28 +368,70 @@ namespace StoryRuntime.UI {
             return items;
         }
 
-        // 沒填立繪的句子沿用前一張：大多數句子立繪欄是空的，每句清空畫面會一直閃
-        void UpdatePortrait(StoryNode node, bool narrative) {
-            string key = node.Portrait;
-            if (string.IsNullOrEmpty(key) || key == _lastPortrait) return;
-            _lastPortrait = key;
-            _portraitOwner = narrative ? null : node.Speaker;
-            if (_portraits != null && _portraits.TryGet(key, out var sprite)) {
-                _view.SetPortrait(sprite);
-                return;
+        // 立繪、位置、立繪效果三欄。沒寫角色的指令屬於這一列的說話者（who）。
+        // 立繪留在場上直到換表情、寫「無」或退場：大多數句子立繪欄是空的，每句清空畫面會一直閃。
+        // 兩個角色站同一格時，後來的把先來的換下去 —— 沒寫位置的劇本就跟以前的單人立繪一樣
+        void ApplyPortraits(StoryNode node, string who, bool instant) {
+            if (string.IsNullOrEmpty(node.Portrait) && (node.Stage == null || node.Stage.IsEmpty)) return;
+            ParsedStage parsed = StageParser.Parse(node.Stage, node.Portrait);
+
+            foreach (PositionCommand command in parsed.Positions) {
+                string w = command.Who ?? who;
+                _slotOf[w] = command.Slot;
+                if (!_shown.ContainsKey(w)) continue;
+                Evict(w, command.Slot);
+                _view.MovePortrait(w, command.Slot);
             }
-            Debug.LogWarning($"[StoryPresenter] 立繪對應表裡沒有「{key}」，沿用前一張");
+
+            foreach (PortraitCommand command in parsed.Portraits) {
+                string w = command.Who ?? who;
+                if (command.Key == null) {
+                    if (_shown.Remove(w)) _view.RemovePortrait(w);
+                    continue;
+                }
+                if (_shown.TryGetValue(w, out string current) && current == command.Key) continue;
+                if (_portraits == null || !_portraits.TryGet(command.Key, out Sprite sprite)) {
+                    Debug.LogWarning($"[StoryPresenter] 立繪對應表裡沒有「{command.Key}」，沿用前一張");
+                    continue;
+                }
+                string slot = SlotOf(w);
+                if (!_shown.ContainsKey(w)) Evict(w, slot);
+                _view.ShowPortrait(w, sprite, slot);
+                _shown[w] = command.Key;
+            }
+
+            foreach (PortraitEffectCommand command in parsed.PortraitEffects) {
+                string w = command.Who ?? who;
+                if (!_shown.ContainsKey(w)) {
+                    Debug.LogWarning($"[StoryPresenter] 「{w}」不在場上，立繪效果「{command.Name}」略過");
+                    continue;
+                }
+                bool leaving = command.Name == "淡出" || command.Name.EndsWith("滑出");
+                if (leaving) _shown.Remove(w);
+                if (instant) { if (leaving) _view.RemovePortrait(w); continue; }
+                _view.PlayPortraitEffect(w, command.Name, (float)command.Seconds);
+            }
         }
 
-        void RestorePortrait(string sceneId, string nodeId) {
+        string SlotOf(string who) => _slotOf.TryGetValue(who, out string slot) ? slot : DefaultSlot;
+
+        void Evict(string who, string slot) {
+            var others = new List<string>();
+            foreach (string other in _shown.Keys) if (other != who && SlotOf(other) == slot) others.Add(other);
+            foreach (string other in others) {
+                _shown.Remove(other);
+                _view.RemovePortrait(other);
+            }
+        }
+
+        // 讀檔：照場景裡的排列重播存檔那一句之前的立繪設定（不帶轉場），跟 RestoreStage 一樣是近似值
+        void RestorePortraits(string sceneId, string nodeId) {
             var scene = _project.FindScene(sceneId);
             if (scene == null) return;
-            StoryNode found = null;
             foreach (var node in scene.Nodes) {
                 if (node.Id == nodeId) break;
-                if (!string.IsNullOrEmpty(node.Portrait)) found = node;
+                ApplyPortraits(node, _speakers.DisplayName(LabelOf(node.Speaker)), instant: true);
             }
-            if (found != null) UpdatePortrait(found, _speakers.IsNarrative(LabelOf(found.Speaker)));
         }
 
         // ── 查表 ─────────────────────────────────────────────
@@ -406,7 +453,10 @@ namespace StoryRuntime.UI {
 
         StoryVariable DeclaredOf(string name) => _project.Variables.Find(v => v.Id == name);
 
+        // 給玩家看的標題：屬性名稱 → 說明 → 變數名稱（變數名稱是英數 id，玩家看不懂，只當最後退路）
         static string InputLabelOf(string name, StoryVariable declared) =>
-            string.IsNullOrWhiteSpace(declared?.Description) ? name : declared.Description;
+            !string.IsNullOrWhiteSpace(declared?.Label) ? declared.Label.Trim()
+            : !string.IsNullOrWhiteSpace(declared?.Description) ? declared.Description
+            : name;
     }
 }

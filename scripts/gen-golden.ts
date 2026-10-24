@@ -743,10 +743,13 @@ write('expressions.json', { version: 1, expressions, assignments, inputs });
 
 interface DirectiveCase {
   stage: Stage;
+  /** 這一列的「立繪」欄（node.portrait）。 */
+  portrait?: string;
   parsed: ReturnType<typeof parseStage>;
 }
 
-const directiveCase = (stage: Stage): DirectiveCase => ({ stage, parsed: parseStage(stage) });
+const directiveCase = (stage: Stage, portrait?: string): DirectiveCase =>
+  portrait === undefined ? { stage, parsed: parseStage(stage) } : { stage, portrait, parsed: parseStage(stage, portrait) };
 
 const directives: DirectiveCase[] = [
   directiveCase({}),
@@ -781,6 +784,14 @@ const directives: DirectiveCase[] = [
     unlocks: '吧台',
     target: '店長',
   }),
+  // 立繪、位置、立繪效果
+  directiveCase({}, '店長-微笑'),
+  directiveCase({ position: '左', portraitEffect: '淡入' }, '店長-微笑'),
+  directiveCase({ position: '熟客：右，店長:左', portraitEffect: '熟客：右滑入 0.5，左滑出' }, '熟客：熟客-普通'),
+  directiveCase({ portraitEffect: '淡出 1' }, '無'),
+  directiveCase({}, '熟客：無，新人-開心'),
+  directiveCase({ position: '上，熟客：中間', portraitEffect: '轉圈，淡入 慢，左滑入 0.2 1' }, '兩個 代號'),
+  directiveCase({ position: '：左，熟客：', portraitEffect: '熟客：' }, '：微笑'),
 ];
 
 write('playthroughs.json', { version: 1, playthroughs });

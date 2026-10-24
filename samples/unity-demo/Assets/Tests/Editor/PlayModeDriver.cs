@@ -67,12 +67,21 @@ namespace StoryDemo.Tests {
         public bool BackgroundBlack, Narrative;
         public float Curtain, Eyes, Flash, CardHeight, PortraitDrop, Scroll, ShadeAlpha;
         public Vector2 Shake;
+        public List<StoryDialogueView.PortraitInfo> Portraits;
+
+        // 場上（不含正在退場）的角色
+        public StoryDialogueView.PortraitInfo? Actor(string who) {
+            foreach (var p in Portraits) if (p.Who == who && !p.Leaving) return p;
+            return null;
+        }
+        public int Cast => Portraits.Count(p => !p.Leaving);
     }
 
     public sealed class UiLog {
         public readonly List<string> Lines = new List<string>();
         public readonly List<string> Speakers = new List<string>();
         public readonly List<int> ChoiceCounts = new List<int>();
+        public readonly List<string> InputLabels = new List<string>();
         public readonly List<LineSnapshot> Early = new List<LineSnapshot>();
         public readonly List<LineSnapshot> Settled = new List<LineSnapshot>();
         public bool SawPartialTyping;
@@ -105,6 +114,9 @@ namespace StoryDemo.Tests {
                 if (input.gameObject.activeSelf) {
                     yield return new WaitForSecondsRealtime(0.3f);
                     shots?.Take("input");
+                    AssertInputLayout(canvas.GetComponent<RectTransform>(), card, input);
+                    foreach (var group in input.Find("Fields").Cast<Transform>())
+                        log.InputLabels.Add(group.Find("Label").GetComponent<TextMeshProUGUI>().text);
                     foreach (var field in input.GetComponentsInChildren<TMP_InputField>()) {
                         string name = field.transform.parent.name;
                         Assert.IsTrue(inputs.ContainsKey(name), $"沒準備「{name}」的輸入值");
@@ -152,9 +164,31 @@ namespace StoryDemo.Tests {
             }
         }
 
+        // 輸入欄出現時，上面的長台詞不能跟輸入欄疊在一起，整個對話框也要留在畫面內
+        static void AssertInputLayout(RectTransform canvas, RectTransform card, Transform input) {
+            var body = card.Find("Body");
+            var screen = Bounds(canvas);
+            var box = Bounds(card);
+            Assert.LessOrEqual(box.yMax, screen.yMax + 0.5f, "對話框超出畫面上緣");
+            if (body.gameObject.activeSelf)
+                Assert.GreaterOrEqual(Bounds((RectTransform)body).yMin, Bounds((RectTransform)input).yMax - 0.5f,
+                                      "台詞區壓到輸入欄");
+            foreach (RectTransform child in input) {
+                if (!child.gameObject.activeSelf) continue;
+                var r = Bounds(child);
+                Assert.GreaterOrEqual(r.yMin, box.yMin - 0.5f, $"輸入欄的「{child.name}」掉出對話框");
+            }
+        }
+
+        static Rect Bounds(RectTransform rt) {
+            var corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+        }
+
         static LineSnapshot Snapshot(StoryDialogueView view, RectTransform root, RectTransform card, string text) {
             var shade = root.Find("Stage/Narrative Shade").GetComponent<Image>().color.a;
-            var pos = ((RectTransform)root.Find("Stage/Portrait")).anchoredPosition;
+            var portraits = view.Portraits;
             return new LineSnapshot {
                 Text = text,
                 Background = view.BackgroundSprite != null ? view.BackgroundSprite.name : null,
@@ -166,7 +200,8 @@ namespace StoryDemo.Tests {
                 Shake = view.Stage.anchoredPosition,
                 Narrative = shade > 0.01f,
                 ShadeAlpha = shade,
-                PortraitDrop = -StoryDialogueView.PortraitInset - pos.y,
+                Portraits = portraits,
+                PortraitDrop = portraits.Count == 0 ? 0 : portraits.Max(p => p.Drop),
                 CardHeight = card.rect.height,
                 Scroll = ((RectTransform)card.Find("Body/Content")).anchoredPosition.y,
             };

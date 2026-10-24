@@ -169,12 +169,13 @@ namespace StoryRuntime.UI.Tests {
             var p = Start();
             Assert.AreEqual("店長", _view.Speaker);
             Assert.AreEqual("微笑", _view.Portrait.name);
-            Assert.IsTrue(_view.Speaking);
+            Assert.AreEqual("店長", _view.SpeakingWho);
+            Assert.AreEqual("右", _view.Shown["店長"].slot, "沒寫位置站右邊（原型 UI25 的位置）");
             Assert.IsFalse(_view.Narrative);
 
             _view.Advance();
             Assert.AreEqual("旁白", _view.Speaker);
-            Assert.IsFalse(_view.Speaking, "別人說話時往下移");
+            Assert.IsNull(_view.SpeakingWho, "旁白時沒有人在說話，立繪往下移");
             Assert.IsTrue(_view.Narrative);
 
             _view.Advance();
@@ -183,7 +184,7 @@ namespace StoryRuntime.UI.Tests {
 
             _view.Advance();
             Assert.AreEqual("嚴肅", _view.Portrait.name, "換表情");
-            Assert.IsTrue(_view.Speaking);
+            Assert.AreEqual("店長", _view.SpeakingWho);
             Assert.IsFalse(_view.Narrative);
             p.Dispose();
 
@@ -243,6 +244,20 @@ namespace StoryRuntime.UI.Tests {
             _view.Advance();
             Assert.IsTrue(p.IsFinished);
             Assert.IsFalse(_view.IsOpen, "播完關掉畫面");
+            p.Dispose();
+        }
+
+        [Test]
+        public void Input_LabelPrefersAttributeNameThenDescriptionThenId() {
+            var opening = _project.Variables.Single(v => v.Id == "opening");
+            var p = new StoryPresenter(_view, _project, _vars, _table);
+            opening.Label = "開幕的日子";
+            p.Resume("s", "i");
+            Assert.AreEqual("開幕的日子", _view.Inputs.Single().Label, "屬性清單的名稱優先");
+
+            opening.Label = null; opening.Description = "";
+            p.Resume("s", "i");
+            Assert.AreEqual("opening", _view.Inputs.Single().Label, "都沒寫才退回變數名稱");
             p.Dispose();
         }
 
@@ -388,6 +403,86 @@ namespace StoryRuntime.UI.Tests {
             p.Dispose();
         }
 
+        // ── 多人立繪 ─────────────────────────────────────────
+
+        const string CastJson = @"{
+            ""meta"": { ""formatVersion"": ""1.5.0"", ""languages"": [""zh""], ""baseLanguage"": ""zh"" },
+            ""characters"": [
+                { ""id"": ""manager"", ""name"": { ""zh"": ""店長"" } },
+                { ""id"": ""rookie"", ""name"": { ""zh"": ""新人"" } },
+                { ""id"": ""guest"", ""name"": { ""zh"": ""熟客"" } },
+                { ""id"": ""rookie_os"", ""name"": { ""zh"": ""新人 os"" } },
+                { ""id"": ""narration"", ""name"": { ""zh"": ""narration"" } }
+            ],
+            ""scenes"": [{
+                ""id"": ""s"", ""name"": ""開店"", ""entryNodeId"": ""a"",
+                ""nodes"": [
+                    { ""id"": ""a"", ""speaker"": ""manager"", ""portrait"": ""微笑"", ""text"": { ""zh"": ""早。"" }, ""next"": ""b"",
+                      ""stage"": { ""position"": ""左"", ""portraitEffect"": ""淡入 0.4"" } },
+                    { ""id"": ""b"", ""speaker"": ""rookie"", ""portrait"": ""嚴肅"", ""text"": { ""zh"": ""早安！"" }, ""next"": ""c"",
+                      ""stage"": { ""position"": ""右"", ""portraitEffect"": ""右滑入"" } },
+                    { ""id"": ""c"", ""speaker"": ""rookie_os"", ""text"": { ""zh"": ""（好緊張。）"" }, ""next"": ""d"",
+                      ""stage"": { ""position"": ""新人：中"" } },
+                    { ""id"": ""d"", ""speaker"": ""guest"", ""portrait"": ""微笑"", ""text"": { ""zh"": ""有開嗎？"" }, ""next"": ""e"",
+                      ""stage"": { ""position"": ""左"", ""portraitEffect"": ""左滑入 0.5"" } },
+                    { ""id"": ""e"", ""speaker"": ""guest"", ""text"": { ""zh"": ""明天見。"" }, ""next"": ""f"",
+                      ""stage"": { ""portraitEffect"": ""左滑出"" } },
+                    { ""id"": ""f"", ""speaker"": ""narration"", ""portrait"": ""新人：無"", ""text"": { ""zh"": ""傍晚了。"" }, ""next"": ""g"",
+                      ""stage"": { ""portraitEffect"": ""店長：淡出 1"" } },
+                    { ""id"": ""g"", ""speaker"": ""narration"", ""text"": { ""zh"": ""結束。"" }, ""next"": ""z"",
+                      ""stage"": { ""portraitEffect"": ""熟客：淡入"" } },
+                    { ""id"": ""z"", ""kind"": ""end"" }
+                ]
+            }]
+        }";
+
+        [Test]
+        public void Portraits_SlotsEntriesExitsAndSameSlotReplaces() {
+            var p = new StoryPresenter(_view, StoryLoader.FromJson(CastJson), new InMemoryStoryVariables(), _table);
+            p.Start("s");
+            CollectionAssert.AreEqual(new[] { "立繪:店長:微笑:左", "效果:店長:淡入:0.4" }, _view.PortraitLog);
+
+            _view.PortraitLog.Clear(); _view.Advance();
+            CollectionAssert.AreEqual(new[] { "立繪:新人:嚴肅:右", "效果:新人:右滑入:0.3" }, _view.PortraitLog, "效果預設 0.3 秒");
+            Assert.AreEqual(2, _view.Shown.Count, "兩人同時在場");
+
+            _view.PortraitLog.Clear(); _view.Advance();
+            CollectionAssert.AreEqual(new[] { "移動:新人:中" }, _view.PortraitLog, "「角色：位置」移動在場的人");
+            Assert.IsNull(_view.SpeakingWho, "內心話時大家都往下移");
+
+            _view.PortraitLog.Clear(); _view.Advance();
+            CollectionAssert.AreEqual(new[] { "退場:店長", "立繪:熟客:微笑:左", "效果:熟客:左滑入:0.5" }, _view.PortraitLog,
+                "站到有人的格子，原本的人換下去");
+            Assert.AreEqual("熟客", _view.SpeakingWho);
+
+            _view.PortraitLog.Clear(); _view.Advance();
+            CollectionAssert.AreEqual(new[] { "效果:熟客:左滑出:0.3" }, _view.PortraitLog);
+            CollectionAssert.AreEquivalent(new[] { "新人" }, _view.Shown.Keys);
+
+            _view.PortraitLog.Clear();
+            LogAssert.Expect(LogType.Warning, new Regex("「店長」不在場上"));
+            _view.Advance();
+            CollectionAssert.AreEqual(new[] { "退場:新人" }, _view.PortraitLog, "「角色：無」立刻離場；已經下去的人不能淡出");
+
+            _view.PortraitLog.Clear();
+            LogAssert.Expect(LogType.Warning, new Regex("「熟客」不在場上"));
+            _view.Advance();
+            CollectionAssert.IsEmpty(_view.PortraitLog, "不在場上的人不能淡入：要先寫立繪");
+            p.Dispose();
+        }
+
+        [Test]
+        public void Portraits_ResumeReplaysCastWithoutTransitions() {
+            var p = new StoryPresenter(_view, StoryLoader.FromJson(CastJson), new InMemoryStoryVariables(), _table);
+            p.Resume("s", "e");
+            CollectionAssert.AreEquivalent(new[] { "新人" }, _view.Shown.Keys, "熟客在這一句左滑出");
+            Assert.AreEqual("中", _view.Shown["新人"].slot);
+            CollectionAssert.Contains(_view.PortraitLog, "退場:店長", "重播到熟客站上左邊時店長被換下");
+            Assert.IsFalse(_view.PortraitLog.Any(l => l.StartsWith("效果:") && !l.Contains("左滑出")),
+                "讀檔只重播站位，進場效果不重播");
+            p.Dispose();
+        }
+
         // ── 假畫面 ───────────────────────────────────────────
 
         sealed class FakeView : IStoryDialogueView {
@@ -406,7 +501,10 @@ namespace StoryRuntime.UI.Tests {
             public void Reveal(int visible) => OnReveal?.Invoke(visible);
 
             public bool IsTyping { get; set; }
-            public bool IsOpen, Auto, Narrative, Speaking;
+            public bool IsOpen, Auto, Narrative;
+            public string SpeakingWho;
+            public readonly Dictionary<string, (Sprite sprite, string slot)> Shown = new Dictionary<string, (Sprite, string)>();
+            public readonly List<string> PortraitLog = new List<string>();
             public string Speaker, Markup, InputError;
             public Sprite Portrait;
             public int RevealCount;
@@ -423,8 +521,20 @@ namespace StoryRuntime.UI.Tests {
             public void ShowChoices(IReadOnlyList<StoryChoiceItem> choices) => Choices = choices.ToList();
             public void ShowInput(IReadOnlyList<StoryInputItem> fields) { Inputs = fields.ToList(); InputError = null; }
             public void ShowInputError(string message) => InputError = message;
-            public void SetPortrait(Sprite sprite) => Portrait = sprite;
-            public void SetPortraitSpeaking(bool speaking) => Speaking = speaking;
+            public void ShowPortrait(string who, Sprite sprite, string slot) {
+                Shown[who] = (sprite, slot); Portrait = sprite;
+                PortraitLog.Add($"立繪:{who}:{sprite.name}:{slot}");
+            }
+            public void MovePortrait(string who, string slot) {
+                if (Shown.TryGetValue(who, out var s)) Shown[who] = (s.sprite, slot);
+                PortraitLog.Add($"移動:{who}:{slot}");
+            }
+            public void PlayPortraitEffect(string who, string effect, float seconds) {
+                if (effect == "淡出" || effect.EndsWith("滑出")) Shown.Remove(who);
+                PortraitLog.Add($"效果:{who}:{effect}:{seconds}");
+            }
+            public void RemovePortrait(string who) { Shown.Remove(who); PortraitLog.Add($"退場:{who}"); }
+            public void SetSpeaker(string who) => SpeakingWho = who;
             public void SetNarrative(bool narrative) => Narrative = narrative;
             public void SetAuto(bool on) => Auto = on;
             public void StartAutoTimer(double seconds) => AutoTimer = seconds;

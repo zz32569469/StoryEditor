@@ -6,7 +6,7 @@
       "zh"
     ],
     "baseLanguage": "zh",
-    "updatedAt": "2026-10-24T11:52:00.829Z",
+    "updatedAt": "2026-10-24T12:17:27.325Z",
     "tagSyntax": "bracket"
   },
   "tagRegistry": [
@@ -168,7 +168,8 @@
       "id": "newcomerName",
       "type": "string",
       "default": "",
-      "description": ""
+      "description": "輸入欄的標題",
+      "label": "新人的名字"
     },
     {
       "id": "practice",
@@ -634,6 +635,7 @@
           },
           "sourceJump": "20",
           "stage": {
+            "position": "中",
             "screenEffect": "震動 0.3 1"
           },
           "kind": "line",
@@ -679,8 +681,8 @@
           },
           "sourceJump": "21",
           "stage": {
-            "position": "中",
-            "portraitEffect": "左滑入",
+            "position": "右",
+            "portraitEffect": "右滑入",
             "sfx": "門鈴"
           },
           "kind": "line",
@@ -725,7 +727,7 @@
           },
           "sourceJump": "23",
           "stage": {
-            "portraitEffect": "左滑出"
+            "portraitEffect": "右滑出"
           },
           "kind": "line"
         },
@@ -748,6 +750,7 @@
           },
           "sourceJump": "24",
           "stage": {
+            "portraitEffect": "店長：左滑出 0.6",
             "screenEffect": "淡出 1",
             "bgm": "停止 1"
           },
@@ -802,7 +805,8 @@
             "background": "店門口-傍晚",
             "screenEffect": "淡入 1"
           },
-          "kind": "line"
+          "kind": "line",
+          "portrait": "新人：無"
         },
         {
           "id": "01M5PW1SJ2RM22FQA56JSB294C",

@@ -14,6 +14,7 @@ namespace StoryRuntime.UI {
 
         [Tooltip("StoryEditor 匯出的 .story.json")] public TextAsset storyFile;
         public StoryPortraitTable portraits;
+        [Tooltip("沒寫過位置的角色站哪裡：左、中、右（右 = 原型 UI25 的單人立繪位置）")] public string defaultPortraitSlot = "右";
         [Tooltip("劇本「背景」欄的代號 → 圖")] public StorySpriteTable backgrounds;
         [Tooltip("劇本「插圖」欄的代號 → 圖")] public StorySpriteTable cgs;
         [Tooltip("效果音、OST 的代號 → 音檔；遊戲有自己的音效系統就改用 UseAudio")] public StoryAudioTable audioTable;
@@ -128,6 +129,7 @@ namespace StoryRuntime.UI {
                 Backgrounds = backgrounds,
                 Cgs = cgs,
                 Audio = Audio,
+                DefaultSlot = defaultPortraitSlot,
             };
             presenter.OnEffects   += effects => AttributesChanged?.Invoke(effects);
             presenter.OnItems     += (items, target) => ItemsConsumed?.Invoke(items, target);

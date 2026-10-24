@@ -35,6 +35,24 @@ namespace StoryRuntime.Story {
         public int Count;
     }
 
+    // 立繪、位置、立繪效果：Who 為 null 是這一列的說話者；Who 是劇本人物欄寫的名字，不是角色 id
+    public sealed class PortraitCommand {
+        public string Who;
+        // null = 「無」：該角色立刻離場
+        public string Key;
+    }
+
+    public sealed class PositionCommand {
+        public string Who;
+        public string Slot;
+    }
+
+    public sealed class PortraitEffectCommand {
+        public string Who;
+        public string Name;
+        public double Seconds;
+    }
+
     public sealed class ParsedStage {
         public KeyCommand Background;
         public KeyCommand Cg;
@@ -45,6 +63,9 @@ namespace StoryRuntime.Story {
         public List<ItemChange> Items = new List<ItemChange>();
         public List<string> Unlocks = new List<string>();
         public string Target;
+        public List<PortraitCommand> Portraits = new List<PortraitCommand>();
+        public List<PositionCommand> Positions = new List<PositionCommand>();
+        public List<PortraitEffectCommand> PortraitEffects = new List<PortraitEffectCommand>();
         public List<string> Issues = new List<string>();
     }
 
@@ -58,6 +79,10 @@ namespace StoryRuntime.Story {
         public const string None = "無";
         public const string BgmStop = "停止";
         public const double BgmDefaultFade = 1;
+
+        public static readonly string[] PortraitSlots = { "左", "中", "右" };
+        public static readonly string[] PortraitEffects = { "淡入", "淡出", "左滑入", "右滑入", "左滑出", "右滑出" };
+        public const double PortraitEffectSeconds = 0.3;
 
         sealed class CommandDef {
             public string Name;
@@ -85,12 +110,14 @@ namespace StoryRuntime.Story {
         static readonly Regex _item = new Regex(@"^(.+?)\s*[×xX*＊]\s*([0-9]+)$");
         static readonly Regex _itemTrailingMark = new Regex(@"[×xX*＊]\s*$");
         static readonly Regex _anySpace = new Regex(@"\s");
+        static readonly Regex _who = new Regex("^([^：:]*)[：:](.*)$");
 
-        public static ParsedStage Parse(StoryStage stage) {
+        // portrait 是這一列的「立繪」欄（node.Portrait，不在 stage 裡），跟位置、立繪效果一起解析
+        public static ParsedStage Parse(StoryStage stage, string portrait = null) {
             var parsed = new ParsedStage();
             var issues = parsed.Issues;
 
-            // 問題訊息的順序要跟網頁端一樣：屬性變化、畫面效果、物品消耗、背景、插圖、OST
+            // 問題訊息的順序要跟網頁端一樣：屬性變化、畫面效果、物品消耗、背景、插圖、OST、立繪、位置、立繪效果
             parsed.Attributes = ParseAttributes(stage?.Attributes, out List<string> malformed);
             foreach (string part in malformed) {
                 issues.Add($"屬性變化「{part}」看不懂，寫法是「名稱±數字」，多個用「，」分隔");
@@ -104,7 +131,71 @@ namespace StoryRuntime.Story {
             parsed.Bgm = ParseBgm(stage?.Bgm, issues);
             string target = stage?.Target?.Trim();
             if (!string.IsNullOrEmpty(target)) parsed.Target = target;
+            parsed.Portraits = ParsePortraits(portrait, issues);
+            parsed.Positions = ParsePositions(stage?.Position, issues);
+            parsed.PortraitEffects = ParsePortraitEffects(stage?.PortraitEffect, issues);
             return parsed;
+        }
+
+        static bool WithWho(string part, string column, List<string> issues, out string who, out string value) {
+            Match match = _who.Match(part);
+            who = null; value = part;
+            if (!match.Success) return true;
+            who = match.Groups[1].Value.Trim();
+            value = match.Groups[2].Value.Trim();
+            if (who.Length > 0 && value.Length > 0) return true;
+            issues.Add($"{column}「{part}」冒號前寫角色、冒號後寫內容");
+            return false;
+        }
+
+        static List<PortraitCommand> ParsePortraits(string text, List<string> issues) {
+            var commands = new List<PortraitCommand>();
+            foreach (string part in Split(text)) {
+                if (!WithWho(part, "立繪", issues, out string who, out string value)) continue;
+                if (value == None) {
+                    commands.Add(new PortraitCommand { Who = who, Key = null });
+                    continue;
+                }
+                if (_anySpace.IsMatch(value)) issues.Add($"立繪「{part}」只能寫一個代號");
+                commands.Add(new PortraitCommand { Who = who, Key = value });
+            }
+            return commands;
+        }
+
+        static List<PositionCommand> ParsePositions(string text, List<string> issues) {
+            var commands = new List<PositionCommand>();
+            foreach (string part in Split(text)) {
+                if (!WithWho(part, "位置", issues, out string who, out string value)) continue;
+                if (Array.IndexOf(PortraitSlots, value) < 0) {
+                    issues.Add($"位置「{part}」只能寫{string.Join("、", PortraitSlots)}");
+                    continue;
+                }
+                commands.Add(new PositionCommand { Who = who, Slot = value });
+            }
+            return commands;
+        }
+
+        static List<PortraitEffectCommand> ParsePortraitEffects(string text, List<string> issues) {
+            var commands = new List<PortraitEffectCommand>();
+            foreach (string part in Split(text)) {
+                if (!WithWho(part, "立繪效果", issues, out string who, out string value)) continue;
+                string[] words = Words(value);
+                if (Array.IndexOf(PortraitEffects, words[0]) < 0) {
+                    issues.Add($"立繪效果「{words[0]}」不認得（可用：{string.Join("、", PortraitEffects)}）");
+                    continue;
+                }
+                if (words.Length > 2) {
+                    issues.Add($"立繪效果「{part}」參數太多，最多 1 個（秒數）");
+                    continue;
+                }
+                double seconds = PortraitEffectSeconds;
+                if (words.Length > 1 && !TryNumber(words[1], out seconds)) {
+                    issues.Add($"立繪效果「{part}」的秒數「{words[1]}」不是數字");
+                    continue;
+                }
+                commands.Add(new PortraitEffectCommand { Who = who, Name = words[0], Seconds = seconds });
+            }
+            return commands;
         }
 
         public static List<AttributeChange> ParseAttributes(string text, out List<string> malformed) {
