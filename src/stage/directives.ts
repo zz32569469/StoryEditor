@@ -61,7 +61,7 @@ export interface ItemChange {
   count: number;
 }
 
-/** 立繪站位。沒寫過位置的角色站哪裡由播放端決定（Unity 預設皮膚：右，跟原型 UI25 的單人立繪一樣）。 */
+/** 立繪站位。沒寫過位置的角色預設站右（跟原型 UI25 的單人立繪一樣；播放端可改）。 */
 export const PORTRAIT_SLOTS = ['左', '中', '右'] as const;
 export type PortraitSlot = (typeof PORTRAIT_SLOTS)[number];
 
