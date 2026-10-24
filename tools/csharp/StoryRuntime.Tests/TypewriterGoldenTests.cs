@@ -38,7 +38,10 @@ namespace StoryRuntime.Tests {
             string input = (string)item["input"];
 
             ParsedText parsed = TagParser.ParseText(input, Registry);
-            TypewriterSchedule schedule = Typewriter.Build(parsed);
+            JToken options = item["options"];
+            TypewriterSchedule schedule = options == null
+                ? Typewriter.Build(parsed)
+                : Typewriter.Build(parsed, (double)options["charsPerSecond"], (double)options["sentencePause"]);
 
             var expectedTimes = (JArray)item["times"];
             Assert.True(expectedTimes.Count == schedule.Times.Count,

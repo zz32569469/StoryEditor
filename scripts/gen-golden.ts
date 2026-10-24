@@ -598,20 +598,25 @@ const tags: TagCase[] = [
 
 interface ScheduleCase {
   input: string;
+  /** 省略時用預設值；有給就兩邊都照這組參數算。 */
+  options?: { charsPerSecond: number; sentencePause: number };
   /** 每個字出現的時刻，以 String(number) 表示以求逐位一致。 */
   times: string[];
   total: string;
 }
 
-function scheduleCase(input: string): ScheduleCase {
+function scheduleCase(input: string, options?: ScheduleCase['options']): ScheduleCase {
   const parsed = parseText(input, DEFAULT_TAG_REGISTRY);
-  const schedule = buildSchedule(parsed.chars);
+  const schedule = buildSchedule(parsed.chars, options);
   return {
     input,
+    ...(options ? { options } : {}),
     times: schedule.times.map(String),
     total: String(schedule.total),
   };
 }
+
+const UI25 = { charsPerSecond: 1 / 0.035, sentencePause: 0.15 };
 
 const schedules: ScheduleCase[] = [
   scheduleCase(''),
@@ -625,6 +630,16 @@ const schedules: ScheduleCase[] = [
   scheduleCase('[speed=2][speed=0.5]內層優先[/speed][/speed]'),
   scheduleCase('[b]粗體不影響速度[/b]'),
   scheduleCase('混[wait=0.25][speed=0.5]合[/speed]用'),
+
+  // 遊戲的閱讀規則（原型 UI25）：每字 35ms、句末標點之後停 150ms
+  scheduleCase('你好。今天！走吧', UI25),
+  scheduleCase('真的？好……那走吧?!', UI25),
+  scheduleCase('結尾的句號不會多等。', UI25),
+  scheduleCase('停。[wait=0.5]頓', UI25),
+  scheduleCase('[speed=0.5]慢。[/speed]快', UI25),
+  scheduleCase('沒有句末標點', UI25),
+  // sentencePause 為 0 時與預設節奏完全相同
+  scheduleCase('你好。今天！', { charsPerSecond: BASE_CHARS_PER_SECOND, sentencePause: 0 }),
 ];
 
 // ---------------------------------------------------------------- 變數插值

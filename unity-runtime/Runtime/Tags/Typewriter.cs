@@ -33,14 +33,20 @@ namespace StoryRuntime.Tags {
 
         public const double DefaultCharsPerSecond = 28;
 
+        // 句末標點：這些字之後停 sentencePause 而不是一般的一字間隔（與 src/preview/schedule.ts 的 SENTENCE_END 同一組）。
+        public const string SentenceEnd = "。！？!?…";
+
         // speed 再小也不能讓一個字花掉整場戲；與網頁端同樣夾在 0.05。
         const double MinSpeed = 0.05;
 
+        // sentencePause：句末標點之後的停頓（秒），取代那一格的一般間隔；0 代表不特別停。
+        // 遊戲的閱讀規則（原型 UI25：每字 35ms、句末停 150ms）由遊戲傳入，預設 0 讓既有節奏不變。
         public static TypewriterSchedule Build(
-            ParsedText parsed, double charsPerSecond = DefaultCharsPerSecond) {
+            ParsedText parsed, double charsPerSecond = DefaultCharsPerSecond, double sentencePause = 0) {
 
             var schedule = new TypewriterSchedule();
             double t = 0;
+            string previous = null;
 
             foreach (ParsedChar entry in parsed.Chars) {
                 foreach (ResolvedTag tag in entry.Before) {
@@ -56,8 +62,11 @@ namespace StoryRuntime.Tags {
                     break;
                 }
 
-                t += 1 / (charsPerSecond * speed);
+                bool afterSentence = sentencePause > 0 && previous != null && previous.Length > 0
+                    && SentenceEnd.IndexOf(previous, System.StringComparison.Ordinal) >= 0;
+                t += afterSentence ? sentencePause : 1 / (charsPerSecond * speed);
                 schedule.Times.Add(t);
+                previous = entry.Char;
             }
 
             schedule.Total = t;

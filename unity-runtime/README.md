@@ -76,6 +76,7 @@ var filled   = Interpolation.Interpolate(node.Text["zh"], name => LookUp(name));
 var parsed   = TagParser.ParseText(filled, project.TagRegistry);
 var markup   = TmpMarkup.CreateDefault().Render(parsed);   // TMP rich text
 var schedule = Typewriter.Build(parsed);                   // 每個字出現的時刻
+// 句末停頓：Typewriter.Build(parsed, 1 / 0.035, 0.15) —— 每字 35ms、。！？!?… 之後停 150ms（預設 0 不停）
 
 label.text = markup;
 label.maxVisibleCharacters = schedule.VisibleAt(elapsedSeconds);
@@ -141,7 +142,7 @@ npm run gen:golden
 cd tools/csharp/StoryRuntime.Tests && dotnet test
 ```
 
-199 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
+206 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
 （狀態、停在哪個節點、走過哪些節點、看得到哪些選項、變數變化）、逐字節奏（每個字的時刻逐位比對）、變數插值與轉義。
 錯誤訊息也逐字比對 —— 那些訊息會出現在使用者眼前，是規格的一部分。
 
