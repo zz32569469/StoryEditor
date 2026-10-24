@@ -220,18 +220,20 @@ export function PlayMode({ project, scene, lang, onExit }: PlayModeProps) {
 
             {state.status === 'choices' && node ? (
               <ul className="dialogue-choices">
-                {node.choices.map((choice) => (
-                  <li key={choice.id}>
-                    <button type="button" onClick={() => setState(choose(project, state, choice.id))}>
-                      <RichText
-                        text={resolveText(choice.text)}
-                        registry={project.tagRegistry}
-                        animate={false}
-                        playToken={0}
-                      />
-                    </button>
-                  </li>
-                ))}
+                {node.choices
+                  .filter((choice) => state.availableChoices.includes(choice.id))
+                  .map((choice) => (
+                    <li key={choice.id}>
+                      <button type="button" onClick={() => setState(choose(project, state, choice.id))}>
+                        <RichText
+                          text={resolveText(choice.text)}
+                          registry={project.tagRegistry}
+                          animate={false}
+                          playToken={0}
+                        />
+                      </button>
+                    </li>
+                  ))}
               </ul>
             ) : (
               <div className="dialogue-advance">

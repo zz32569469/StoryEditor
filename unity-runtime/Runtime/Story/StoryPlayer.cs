@@ -22,13 +22,18 @@ namespace StoryRuntime.Story {
         void Set(string name, StoryValue value);
     }
 
-    public sealed class PlayerState {
+    // 叫 StoryState 而不是 TS 那邊的 PlayerState：遊戲端多半已經有自己的 PlayerState
+    // （玩家金錢、體力那種），using StoryRuntime.Story 時兩個同名型別會讓編譯失敗。
+    public sealed class StoryState {
         public string SceneId;
         // 目前停留的節點；Ended 時可能為 null。
         public string NodeId;
         public PlayerStatus Status;
         // Input 狀態時要填的變數名。
         public List<string> PendingInputs = new List<string>();
+        // Choices 狀態時玩家看得到的選項 id，依劇本順序。
+        // 解鎖條件在抵達選項時判斷一次並記在這裡：UI 只照這份顯示，Choose 也只收這份裡的 id。
+        public List<string> AvailableChoices = new List<string>();
         public string Error;
         // 走過的節點，用來偵測無限迴圈，也方便測試比對走訪路徑。
         public List<string> Visited = new List<string>();
@@ -66,10 +71,10 @@ namespace StoryRuntime.Story {
             }
         }
 
-        public static PlayerState StartScene(
+        public static StoryState StartScene(
             StoryProject project, string sceneId, IStoryVariables variables, PlayerOptions options = null) {
 
-            var state = new PlayerState { SceneId = sceneId, Status = PlayerStatus.Line };
+            var state = new StoryState { SceneId = sceneId, Status = PlayerStatus.Line };
             StoryScene scene = project.FindScene(sceneId);
             if (scene == null) return Fail(state, $"找不到場景 {sceneId}");
 
@@ -77,8 +82,23 @@ namespace StoryRuntime.Story {
             return Settle(state, scene, variables, options);
         }
 
-        public static PlayerState Advance(
-            StoryProject project, PlayerState state, IStoryVariables variables, PlayerOptions options = null) {
+        // 讀檔用：從存檔記下的節點重新進入，停在那一句的開頭。
+        // 存檔只會記在停得下來的節點（台詞、選項、輸入），所以 Settle 不會重跑任何 set ——
+        // 選項的解鎖條件則會依讀檔當下的變數重新判斷。
+        public static StoryState ResumeAt(
+            StoryProject project, string sceneId, string nodeId, IStoryVariables variables, PlayerOptions options = null) {
+
+            var state = new StoryState { SceneId = sceneId, Status = PlayerStatus.Line };
+            StoryScene scene = project.FindScene(sceneId);
+            if (scene == null) return Fail(state, $"找不到場景 {sceneId}");
+            if (scene.FindNode(nodeId) == null) return Fail(state, $"找不到節點 {nodeId}");
+
+            state.NodeId = nodeId;
+            return Settle(state, scene, variables, options);
+        }
+
+        public static StoryState Advance(
+            StoryProject project, StoryState state, IStoryVariables variables, PlayerOptions options = null) {
 
             StoryScene scene = project.FindScene(state.SceneId);
             if (scene == null) return Fail(state, $"找不到場景 {state.SceneId}");
@@ -91,8 +111,8 @@ namespace StoryRuntime.Story {
             return Settle(state, scene, variables, options);
         }
 
-        public static PlayerState Choose(
-            StoryProject project, PlayerState state, string choiceId,
+        public static StoryState Choose(
+            StoryProject project, StoryState state, string choiceId,
             IStoryVariables variables, PlayerOptions options = null) {
 
             StoryScene scene = project.FindScene(state.SceneId);
@@ -107,13 +127,16 @@ namespace StoryRuntime.Story {
                 }
             }
             if (choice == null) return Fail(state, $"找不到選項 {choiceId}");
+            if (!state.AvailableChoices.Contains(choiceId)) {
+                return Fail(state, $"選項 {choiceId} 的條件不成立，不能選");
+            }
 
             state.NodeId = choice.TargetNodeId;
             return Settle(state, scene, variables, options);
         }
 
-        public static PlayerState SubmitInput(
-            StoryProject project, PlayerState state, Dictionary<string, StoryValue> values,
+        public static StoryState SubmitInput(
+            StoryProject project, StoryState state, Dictionary<string, StoryValue> values,
             IStoryVariables variables, PlayerOptions options = null) {
 
             StoryScene scene = project.FindScene(state.SceneId);
@@ -167,13 +190,14 @@ namespace StoryRuntime.Story {
 
         // 從指定節點往下跑，直到停在需要玩家操作的地方。
         // branch / set 這類流程控制節點不需要玩家介入，會連續處理完。
-        static PlayerState Settle(
-            PlayerState state, StoryScene scene, IStoryVariables variables, PlayerOptions options) {
+        static StoryState Settle(
+            StoryState state, StoryScene scene, IStoryVariables variables, PlayerOptions options) {
 
             var context = new EvalContext {
                 Variables = variables,
                 Functions = MergeFunctions(options),
             };
+            state.AvailableChoices = new List<string>();
 
             for (int step = 0; step < MaxSteps; step += 1) {
                 if (state.NodeId == null) {
@@ -241,7 +265,33 @@ namespace StoryRuntime.Story {
 
                     default: {
                         // line：有選項就停在選項，否則停在台詞。
-                        state.Status = node.Choices.Count > 0 ? PlayerStatus.Choices : PlayerStatus.Line;
+                        if (node.Choices.Count == 0) {
+                            state.Status = PlayerStatus.Line;
+                            return state;
+                        }
+
+                        var available = new List<string>();
+                        foreach (StoryChoice choice in node.Choices) {
+                            if (string.IsNullOrWhiteSpace(choice.Condition)) {
+                                available.Add(choice.Id);
+                                continue;
+                            }
+                            ParseResult<Expr> parsed = ExprParser.ParseExpression(choice.Condition);
+                            if (!parsed.Ok) {
+                                return Fail(state, $"選項條件「{choice.Condition}」：{parsed.Error.Message}");
+                            }
+                            EvalResult result = Evaluator.Evaluate(parsed.Value, context);
+                            if (!result.Ok) return Fail(state, $"選項條件「{choice.Condition}」：{result.Message}");
+                            if (result.Value.IsTruthy()) available.Add(choice.Id);
+                        }
+                        if (available.Count == 0) {
+                            // 停在一個沒有任何選項可按的畫面，玩家只能卡死；明確報錯才找得到是哪一組。
+                            var conditions = new List<string>();
+                            foreach (StoryChoice choice in node.Choices) conditions.Add(choice.Condition ?? "");
+                            return Fail(state, $"所有選項的條件都不成立：{string.Join("、", conditions)}");
+                        }
+                        state.Status = PlayerStatus.Choices;
+                        state.AvailableChoices = available;
                         return state;
                     }
                 }
@@ -260,13 +310,13 @@ namespace StoryRuntime.Story {
             return functions;
         }
 
-        static PlayerState Fail(PlayerState state, string message) {
+        static StoryState Fail(StoryState state, string message) {
             state.Status = PlayerStatus.Error;
             state.Error = message;
             return state;
         }
 
-        public static StoryNode CurrentNode(StoryProject project, PlayerState state) {
+        public static StoryNode CurrentNode(StoryProject project, StoryState state) {
             StoryScene scene = project.FindScene(state.SceneId);
             return scene?.FindNode(state.NodeId);
         }

@@ -247,6 +247,7 @@ interface Snapshot {
   error: string | null;
   visited: string[];
   pendingInputs: string[];
+  availableChoices: string[];
   variables: Record<string, EncodedValue>;
 }
 
@@ -271,6 +272,7 @@ function snapshot(state: PlayerState): Snapshot {
     error: state.error,
     visited: [...state.visited],
     pendingInputs: [...state.pendingInputs],
+    availableChoices: [...state.availableChoices],
     variables,
   };
 }
@@ -392,6 +394,76 @@ const withSetAndInput = project(
   ],
 );
 
+const lockedChoices = project(
+  [
+    node('ask', {
+      choices: [
+        { id: 'free', text: { zh: '一直都在' }, targetNodeId: 'end', extras: {} },
+        {
+          id: 'warm',
+          text: { zh: '要夠熟' },
+          targetNodeId: 'end',
+          condition: 'affection >= 30',
+          extras: {},
+        },
+        { id: 'key', text: { zh: '要有鑰匙' }, targetNodeId: 'end', condition: 'hasKey', extras: {} },
+        // 只有空白的條件等同沒有條件 —— 編輯器清空欄位時可能留下空白。
+        { id: 'blank', text: { zh: '空白條件' }, targetNodeId: 'end', condition: '  ', extras: {} },
+      ],
+    }),
+    node('end', { kind: 'end' }),
+  ],
+  [
+    { id: 'affection', type: 'number', default: 0, description: '' },
+    { id: 'hasKey', type: 'bool', default: false, description: '' },
+  ],
+);
+
+const allLocked = project(
+  [
+    node('ask', {
+      choices: [
+        { id: 'a', text: { zh: 'A' }, targetNodeId: null, condition: 'affection > 50', extras: {} },
+        { id: 'b', text: { zh: 'B' }, targetNodeId: null, condition: 'affection > 80', extras: {} },
+      ],
+    }),
+  ],
+  [{ id: 'affection', type: 'number', default: 0, description: '' }],
+);
+
+// 條件在抵達選項時才判斷：先經過 set 再到選項，看到的必須是改過之後的值。
+const unlockAfterSet = project(
+  [
+    node('open', { next: 'gain' }),
+    node('gain', { kind: 'set', expression: 'affection = affection + 40', next: 'ask' }),
+    node('ask', {
+      choices: [
+        { id: 'plain', text: { zh: '普通' }, targetNodeId: null, extras: {} },
+        { id: 'warm', text: { zh: '熟了' }, targetNodeId: null, condition: 'affection >= 30', extras: {} },
+      ],
+    }),
+  ],
+  [{ id: 'affection', type: 'number', default: 0, description: '' }],
+);
+
+const brokenUnlock = project([
+  node('ask', {
+    choices: [
+      { id: 'ok', text: { zh: '正常' }, targetNodeId: null, extras: {} },
+      { id: 'bad', text: { zh: '壞掉' }, targetNodeId: null, condition: 'affection >=', extras: {} },
+    ],
+  }),
+]);
+
+const undefinedUnlock = project([
+  node('ask', {
+    choices: [
+      { id: 'ok', text: { zh: '正常' }, targetNodeId: null, extras: {} },
+      { id: 'typo', text: { zh: '打錯字' }, targetNodeId: null, condition: 'afection >= 1', extras: {} },
+    ],
+  }),
+]);
+
 const brokenJump = project([node('only', { next: 'nowhere' })]);
 
 const infiniteLoop = project([
@@ -416,6 +488,16 @@ const playthroughs: PlaythroughCase[] = [
   playthrough('數字型別的輸入不吃前導零', withSetAndInput, 'scene', [
     ['input', { firstName: '00812', playerAge: '25' }],
   ]),
+  playthrough('解鎖條件不成立的選項不出現', lockedChoices, 'scene', [['choose', 'free']]),
+  playthrough('解鎖條件成立的選項出現並可選', lockedChoices, 'scene', [['choose', 'warm']], {
+    affection: 30,
+    hasKey: true,
+  }),
+  playthrough('選了被鎖住的選項', lockedChoices, 'scene', [['choose', 'key']], { affection: 99 }),
+  playthrough('所有選項都被鎖住', allLocked, 'scene', [], { affection: 10 }),
+  playthrough('解鎖條件在抵達時才判斷', unlockAfterSet, 'scene', [['advance'], ['choose', 'warm']]),
+  playthrough('解鎖條件語法錯誤', brokenUnlock, 'scene', []),
+  playthrough('解鎖條件用到未定義的變數', undefinedUnlock, 'scene', []),
   playthrough('跳轉指向不存在的節點', brokenJump, 'scene', [['advance']]),
   playthrough('無限迴圈會被擋下', infiniteLoop, 'scene', []),
   playthrough('找不到場景', linear, 'nope', []),

@@ -725,6 +725,12 @@
   gap: 6px;
 }
 
+.choice-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 .choice-row--branch {
   grid-template-columns: 1fr 140px;
   align-items: start;

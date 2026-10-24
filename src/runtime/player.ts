@@ -38,6 +38,13 @@ export interface PlayerState {
   variables: Map<string, Value>;
   /** input 狀態時要填的變數名。 */
   pendingInputs: string[];
+  /**
+   * choices 狀態時玩家看得到的選項 id，依劇本順序。
+   *
+   * 解鎖條件在**抵達**選項時判斷一次並記在這裡：UI 只照這份顯示，
+   * choose 也只收這份裡的 id —— 兩邊各算一次的話，條件裡的變數在中間變了就會對不上。
+   */
+  availableChoices: string[];
   /** error 狀態的說明。 */
   error: string | null;
   /** 走過的節點，用來偵測無限迴圈。 */
@@ -76,7 +83,7 @@ function nodeOf(scene: Scene, nodeId: string | null): StoryNode | undefined {
  * 停下來的一定是台詞、選項、輸入、結束或錯誤。
  */
 function settle(state: PlayerState, scene: Scene, options: PlayerOptions): PlayerState {
-  let current = state;
+  let current: PlayerState = { ...state, availableChoices: [] };
 
   for (let step = 0; step < MAX_STEPS; step += 1) {
     if (current.nodeId === null) return { ...current, status: 'ended' };
@@ -91,8 +98,30 @@ function settle(state: PlayerState, scene: Scene, options: PlayerOptions): Playe
         return { ...current, status: 'ended', nodeId: node.id };
 
       case 'line': {
-        if (node.choices.length > 0) return { ...current, status: 'choices' };
-        return { ...current, status: 'line' };
+        if (node.choices.length === 0) return { ...current, status: 'line' };
+
+        const available: string[] = [];
+        for (const choice of node.choices) {
+          if (!choice.condition?.trim()) {
+            available.push(choice.id);
+            continue;
+          }
+          const parsed = parseExpression(choice.condition);
+          if (!parsed.ok) {
+            return fail(current, `選項條件「${choice.condition}」：${parsed.error.message}`);
+          }
+          const result = evaluate(parsed.value, contextOf(current, options));
+          if (!result.ok) return fail(current, `選項條件「${choice.condition}」：${result.message}`);
+          if (truthy(result.value)) available.push(choice.id);
+        }
+        if (available.length === 0) {
+          // 停在一個沒有任何選項可按的畫面，玩家只能卡死；明確報錯才找得到是哪一組。
+          return fail(
+            current,
+            `所有選項的條件都不成立：${node.choices.map((c) => c.condition ?? '').join('、')}`,
+          );
+        }
+        return { ...current, status: 'choices', availableChoices: available };
       }
 
       case 'input': {
@@ -157,6 +186,7 @@ export function startScene(
     status: 'line',
     variables: new Map(Object.entries(options.initialVariables ?? {})),
     pendingInputs: [],
+    availableChoices: [],
     error: null,
     visited: [],
   };
@@ -202,6 +232,9 @@ export function choose(
   const node = nodeOf(scene, state.nodeId);
   const choice = node?.choices.find((c) => c.id === choiceId);
   if (!choice) return fail(state, `找不到選項 ${choiceId}`);
+  if (!state.availableChoices.includes(choiceId)) {
+    return fail(state, `選項 ${choiceId} 的條件不成立，不能選`);
+  }
 
   return settle({ ...state, nodeId: choice.targetNodeId }, scene, options);
 }

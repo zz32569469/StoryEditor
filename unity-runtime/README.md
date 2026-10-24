@@ -51,7 +51,20 @@ state = StoryPlayer.SubmitInput(project, state, values, variables);
 `StartScene` **不會**自己鋪變數預設值 —— 那會在每次進劇情時把遊戲狀態重設掉。
 需要時自己呼叫 `StoryPlayer.SeedDefaults(project, variables)`（新遊戲開始時）。
 
-中途存檔只要記 `state.SceneId` 與 `state.NodeId`，讀檔時從那一句重播。
+狀態型別叫 `StoryState`（網頁端叫 `PlayerState`）—— 遊戲多半已經有自己的 `PlayerState`，
+同名會讓 `using StoryRuntime.Story` 編譯失敗。
+
+### 選項解鎖
+
+選項的 `condition` 不成立時玩家看不到它。判斷在**抵達選項那一刻**做一次，結果放在
+`state.AvailableChoices`（依劇本順序的 id）：UI 只照這份顯示，`Choose` 也只收這份裡的 id，
+選了名單外的會變成 `Error`。全部選項都不成立也是 `Error` —— 不然畫面會停在一個沒有按鈕可按的地方。
+
+### 存讀檔
+
+中途存檔只要記 `state.SceneId` 與 `state.NodeId`。讀檔用
+`StoryPlayer.ResumeAt(project, sceneId, nodeId, variables)` 回到那一句的開頭：
+存檔只會停在台詞、選項、輸入這些節點，所以不會重跑任何 `set`；選項的解鎖條件則依讀檔當下的變數重新判斷。
 
 ## 渲染一句台詞
 
@@ -126,11 +139,11 @@ npm run gen:golden
 cd tools/csharp/StoryRuntime.Tests && dotnet test
 ```
 
-192 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
-（狀態、停在哪個節點、走過哪些節點、變數變化）、逐字節奏（每個字的時刻逐位比對）、變數插值與轉義。
+199 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
+（狀態、停在哪個節點、走過哪些節點、看得到哪些選項、變數變化）、逐字節奏（每個字的時刻逐位比對）、變數插值與轉義。
 錯誤訊息也逐字比對 —— 那些訊息會出現在使用者眼前，是規格的一部分。
 
-**唯一沒有對照的是 TMP 轉換**：網頁端輸出的是 CSS，沒有對應實作可比，
+**沒有對照的是 TMP 轉換與 `ResumeAt`**（網頁預覽不讀檔）。TMP 轉換：網頁端輸出的是 CSS，沒有對應實作可比，
 所以那一層的期望值是手寫的，只證明「符合規格」而非「與編輯器一致」。
 
 `Tests~` 的 `~` 讓 Unity 完全忽略這個資料夾，測資不會被匯入成資產。

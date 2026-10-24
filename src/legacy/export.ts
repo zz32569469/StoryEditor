@@ -77,7 +77,8 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
   let newIds = 0;
 
   for (const scene of project.scenes) {
-    const headers = scene.sourceColumns?.length ? scene.sourceColumns : DEFAULT_COLUMNS;
+    const headers = [...(scene.sourceColumns?.length ? scene.sourceColumns : DEFAULT_COLUMNS)];
+    const unlockColumn = ensureUnlockColumn(headers, scene.nodes);
     const alloc = makeIdAllocator(existingIds(scene.nodes));
 
     // 先決定每個節點與每個選項／分支的編號，跳轉才有對象可指。
@@ -142,6 +143,7 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
             人物: labelOf(choice.speaker) ?? speaker,
             內容: choice.text[base] ?? '',
             跳轉: jumpTo(choice.targetNodeId, choice.sourceJump),
+            ...(unlockColumn ? { [unlockColumn]: choice.condition ?? '' } : {}),
           });
         }
         continue;
@@ -198,6 +200,25 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
     rows: totalRows,
     newIds,
   };
+}
+
+/**
+ * 找出這張表的選項解鎖欄名；表裡沒有這欄、卻有選項帶條件時補一欄。
+ *
+ * 不補的話，在編輯器裡替新場景的選項加上的條件，匯出時會整欄消失。
+ */
+function ensureUnlockColumn(headers: string[], nodes: StoryNode[]): string | null {
+  const index = findColumn(headers, 'unlock');
+  if (index > 0) return headers[index - 1]!;
+
+  const needed = nodes.some((node) => node.choices.some((choice) => choice.condition));
+  if (!needed) return null;
+
+  const name = COLUMN_ALIASES.unlock[0];
+  const jump = findColumn(headers, 'jump');
+  if (jump > 0) headers.splice(jump - 1, 0, name);
+  else headers.push(name);
+  return name;
 }
 
 function columnWidth(header: string): number {
