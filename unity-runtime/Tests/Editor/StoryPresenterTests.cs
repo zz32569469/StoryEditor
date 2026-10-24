@@ -509,6 +509,136 @@ namespace StoryRuntime.UI.Tests {
             p.Dispose();
         }
 
+        // ── 閱讀輔助 ─────────────────────────────────────────
+
+        // a 店長 → b 旁白 → c 內心話 → d 店長 → q 選項 → i 輸入 → e 系統
+        void PlayToEnd(StoryPresenter p) {
+            p.Start("s");
+            for (int i = 0; i < 4; i += 1) _view.Advance();
+            _view.ClickChoice("c1");
+            _view.Submit(("opening", "2026-11-01"));
+        }
+
+        [Test]
+        public void Backlog_RecordsLinesChoicesAndInputs() {
+            var p = new StoryPresenter(_view, _project, _vars, _table);
+            PlayToEnd(p);
+            _view.ClickBacklog();
+            var log = _view.BacklogShown;
+            CollectionAssert.AreEqual(
+                new[] { "Line|店長|早安。", "Line|旁白|店裡還沒開燈。", "Line|我|（好緊張。）", "Line|店長|那就開始吧。",
+                        "Choice||好的", "Input|開幕日|2026-11-01", "Line|系統|開幕日：2026-11-01" },
+                log.Select(e => $"{e.Kind}|{e.Speaker}|{e.Text}"), "選項那句沒有台詞，不記");
+            p.Dispose();
+        }
+
+        [Test]
+        public void Backlog_KeepsTheNewestEntriesUpToCapacity() {
+            var backlog = new StoryBacklog();
+            Assert.GreaterOrEqual(backlog.Capacity, 250, "至少 250 筆");
+            for (int i = 0; i < 400; i += 1) backlog.Add(new StoryBacklog.Entry { Text = i.ToString() });
+            Assert.AreEqual(StoryBacklog.DefaultCapacity, backlog.Entries.Count);
+            Assert.AreEqual((400 - StoryBacklog.DefaultCapacity).ToString(), backlog.Entries[0].Text, "丟掉最舊的");
+            Assert.AreEqual("399", backlog.Entries.Last().Text);
+        }
+
+        [Test]
+        public void Skip_FastForwardsReadLinesAndStopsAtChoices() {
+            var history = new StoryReadHistory();
+            var first = new StoryPresenter(_view, _project, _vars, _table) { ReadHistory = history };
+            PlayToEnd(first);
+            first.Dispose();
+            Assert.IsTrue(history.IsRead("s", "d"));
+
+            var p = new StoryPresenter(_view, _project, _vars, _table) { ReadHistory = history };
+            p.Start("s");
+            _view.ClickSkip();
+            Assert.IsTrue(_view.SkipOn);
+            Assert.AreEqual(StoryPresenter.SkipDelay, _view.AutoTimer, 1e-9);
+            for (int i = 0; i < 3; i += 1) {
+                _view.ElapseAuto();
+                Assert.IsTrue(p.Skip, "讀過的句子一路跳");
+            }
+            Assert.AreEqual("那就開始吧。", _view.Markup);
+            _view.ElapseAuto();
+            Assert.AreEqual(PlayerStatus.Choices, p.State.Status);
+            Assert.IsFalse(_view.SkipOn, "碰到選項就停");
+            p.Dispose();
+        }
+
+        [Test]
+        public void Skip_StopsAtUnreadLineAndOnClick() {
+            var p = new StoryPresenter(_view, _project, _vars, _table);
+            p.Start("s");
+            _view.ClickSkip();
+            _view.ElapseAuto();
+            Assert.AreEqual("店裡還沒開燈。", _view.Markup);
+            Assert.IsFalse(p.Skip, "沒讀過的句子停下來給玩家看");
+
+            _view.ClickSkip();
+            _view.Advance();
+            Assert.IsFalse(p.Skip, "略過中點一下就停");
+            Assert.AreEqual("店裡還沒開燈。", _view.Markup, "那一下不會前進");
+            p.Dispose();
+        }
+
+        [Test]
+        public void TextSpeed_ScalesScheduleAndInstantRevealsAndCycles() {
+            var p = new StoryPresenter(_view, _project, _vars, _table);
+            p.Start("s");
+            double normal = _view.Schedule.Total;
+            Assert.AreEqual("普通", _view.SpeedLabel);
+
+            _view.ClickSpeed();
+            Assert.AreEqual("快", _view.SpeedLabel);
+            _view.Advance();
+            var fast = StoryPresenter.Schedule(TagParser.ParseText("店裡還沒開燈。", _project.TagRegistry));
+            Assert.AreEqual(fast.Total / 2, _view.Schedule.Total, 1e-9, "快 = 兩倍速");
+
+            _view.ClickSpeed();
+            Assert.AreEqual("瞬間", _view.SpeedLabel);
+            int reveals = _view.RevealCount;
+            _view.Advance();
+            Assert.AreEqual(reveals + 1, _view.RevealCount, "瞬間：整句直接出現");
+
+            _view.ClickSpeed();
+            Assert.AreEqual("慢", _view.SpeedLabel);
+            _view.ClickSpeed();
+            Assert.AreEqual("普通", _view.SpeedLabel);
+            Assert.Greater(normal, 0);
+            p.Dispose();
+        }
+
+        [Test]
+        public void QuickSave_RestoresLineVariablesHistoryAndBacklog() {
+            var store = new MemoryQuickSaveStore();
+            var p = new StoryPresenter(_view, _project, _vars, _table) { QuickSaves = store };
+            _view.ClickQuickLoad();
+            Assert.IsNull(_view.Notice, "還沒開始播不能讀");
+
+            p.Start("s");
+            _view.ClickQuickLoad();
+            Assert.AreEqual("還沒有快速存檔", _view.Notice);
+            for (int i = 0; i < 3; i += 1) _view.Advance();
+            _vars.Set("trust", StoryValue.Number(5));
+            _view.ClickQuickSave();
+            Assert.AreEqual("已快速存檔", _view.Notice);
+
+            _view.Advance();
+            _vars.Set("trust", StoryValue.Number(0));
+            _view.ClickQuickLoad();
+            Assert.AreEqual("已讀取快速存檔", _view.Notice);
+            Assert.AreEqual("d", p.State.NodeId);
+            Assert.AreEqual("那就開始吧。", _view.Markup);
+            Assert.AreEqual(5, _vars.TryGet("trust", out var trust) ? trust.AsNumber : -1);
+            Assert.AreEqual(1, p.Backlog.Entries.Count(e => e.NodeId == "d"), "讀檔回來那一句不重複記");
+            Assert.AreEqual(4, p.Backlog.Entries.Count);
+
+            var json = store.Load().ToJson();
+            StringAssert.Contains("\"trust\"", json, "整份可以轉成 JSON 放進遊戲自己的存檔");
+            p.Dispose();
+        }
+
         // ── 假畫面 ───────────────────────────────────────────
 
         sealed class FakeView : IStoryDialogueView {
@@ -519,6 +649,21 @@ namespace StoryRuntime.UI.Tests {
             public event Action OnLineShown;
             public event Action OnAutoElapsed;
             public event Action<int> OnReveal;
+            public event Action OnBacklogClick, OnSkipClick, OnSpeedClick, OnQuickSaveClick, OnQuickLoadClick;
+            public bool SkipOn;
+            public string SpeedLabel, Notice;
+            public List<StoryBacklog.Entry> BacklogShown;
+            public TypewriterSchedule Schedule;
+            public void SetSkip(bool on) => SkipOn = on;
+            public void SetSpeedLabel(string label) => SpeedLabel = label;
+            public void ShowBacklog(IReadOnlyList<StoryBacklog.Entry> entries) => BacklogShown = entries.ToList();
+            public void ShowNotice(string message) => Notice = message;
+            public void ClickBacklog() => OnBacklogClick?.Invoke();
+            public void ClickSkip() => OnSkipClick?.Invoke();
+            public void ClickSpeed() => OnSpeedClick?.Invoke();
+            public void ClickQuickSave() => OnQuickSaveClick?.Invoke();
+            public void ClickQuickLoad() => OnQuickLoadClick?.Invoke();
+            public void ClickChoice(string id) => OnChoiceClick?.Invoke(id);
 
             public readonly List<string> Stage = new List<string>();
             public void SetBackground(Sprite sprite, float fade) => Stage.Add($"背景:{(sprite == null ? "黑" : sprite.name)}:{fade}");
@@ -542,7 +687,7 @@ namespace StoryRuntime.UI.Tests {
             public void Close() => IsOpen = false;
             public MotionTag[][] Motion;
             public void ShowLine(string speaker, string markup, TypewriterSchedule schedule, MotionTag[][] motion) {
-                Speaker = speaker; Markup = markup; AutoTimer = -1; Motion = motion;
+                Speaker = speaker; Markup = markup; AutoTimer = -1; Motion = motion; Schedule = schedule;
             }
             public void RevealAll() { RevealCount++; IsTyping = false; }
             public void ShowChoices(IReadOnlyList<StoryChoiceItem> choices) => Choices = choices.ToList();

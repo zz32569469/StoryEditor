@@ -45,6 +45,20 @@ yield return controller.Play("第一章");   // 用工作表名稱找場景，�
 - **換皮**：實作 `IStoryDialogueView`，用 `controller.UseView(...)` 換掉。Presenter 只認介面，計時在 View、判斷在 Presenter。
 - **遊戲接線**：`Opened`／`Closed` 事件讓遊戲藏自己的 HUD；變數傳自己的 `IStoryVariables` 才會進存檔。
 
+### 閱讀輔助
+
+對話框右上 AUTO 左邊一排按鈕（由右往左）：SKIP、LOG、速度、快讀、快存、隱藏。
+
+- **對話紀錄（LOG／滾輪往上）**：看過的台詞、選過的選項、填過的輸入，預設保留 300 筆（`backlogCapacity`），
+  超過丟掉最舊的。打開時停下 AUTO 與略過；「關閉」、右鍵、Esc 收起。
+- **略過（SKIP）**：只快轉讀過的句子（每句 0.05 秒），碰到沒讀過的句子、選項、輸入就停；略過中點一下也停。
+  讀過的句子記在 `controller.ReadHistory`，要跟遊戲存檔一起存（`Keys`／`Load`）才分得出新舊。
+- **文字速度**：慢 ×0.5、普通、快 ×2、瞬間（整句直接出現），倍率同時套在每字時間與句末停頓。
+  玩家切換後寫回 `controller.textSpeed`，下一場沿用；要記到設定檔由遊戲自己存。
+- **快存／快讀**：一格，內容是停在哪一句、劇本宣告的變數值、讀過的句子、對話紀錄（`StoryQuickSave`，可整份轉 JSON）。
+  預設存成 `persistentDataPath/story-quicksave.json`；`controller.QuickSaves` 可換成遊戲自己的存放處。
+- **隱藏（右鍵）**：收起對話框看全畫面；再點一下、右鍵、Space 或 Enter 叫回來，那一下不會前進。
+
 ### 演出
 
 `StoryPlayer` 每一步回傳 `state.Cues`（經過的、有演出欄位的節點／選項／分支，依序）與 `state.Effects`
@@ -213,7 +227,7 @@ cd tools/csharp/StoryRuntime.Tests && dotnet test
 
 ## 還沒做的
 
-- 閱讀輔助：對話紀錄、快轉讀過的句子、隱藏對話框、文字速度設定
+- 快速存檔只有一格；多存檔欄位、存檔縮圖交給遊戲自己的存檔畫面
 
 ## 已知的落差
 

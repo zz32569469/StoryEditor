@@ -20,6 +20,11 @@ namespace StoryRuntime.UI {
         public event Action OnLineShown;
         public event Action OnAutoElapsed;
         public event Action<int> OnReveal;
+        public event Action OnBacklogClick;
+        public event Action OnSkipClick;
+        public event Action OnSpeedClick;
+        public event Action OnQuickSaveClick;
+        public event Action OnQuickLoadClick;
 
         // 原型以 1024×768 設計；畫布參考解析度 1280×960，尺寸一律 ×1.25
         public const float S = 1.25f;
@@ -104,6 +109,15 @@ namespace StoryRuntime.UI {
         bool _lineShownPending, _autoOn, _narrative, _layoutDirty;
         float _autoRemaining = -1, _shadeAlpha;
         string _speakerWho;
+        readonly List<PillButton> _pills = new List<PillButton>();
+        PillButton _skipPill, _speedPill;
+        bool _skipOn, _uiHidden;
+        RectTransform _backlog, _backlogContent, _notice;
+        ScrollRect _backlogScroll;
+        TextMeshProUGUI _noticeText;
+        CanvasGroup _noticeGroup;
+        float _noticeRemaining;
+        const float NoticeSeconds = 1.6f, NoticeFade = 0.3f;
         MotionTag[][] _motion;
         Vector2[] _motionOffsets;
         float _motionTime;
@@ -121,6 +135,12 @@ namespace StoryRuntime.UI {
         public float FlashAlpha => _flashAlpha.Value;
         public float EyesOpen => _eyes.Value;
         public RectTransform Card => _card;
+        public bool UiHidden => _uiHidden;
+        public bool IsBacklogOpen => _backlog != null && _backlog.gameObject.activeSelf;
+        public int BacklogRows => _backlogContent == null ? 0 : _backlogContent.childCount;
+        public bool SkipOn => _skipOn;
+        public string SpeedLabel => _speedPill.Label.text;
+        public string Notice => _notice.gameObject.activeSelf ? _noticeText.text : null;
         public RectTransform PortraitLayer => _portraitLayer;
 
         public readonly struct PortraitInfo {
@@ -152,7 +172,7 @@ namespace StoryRuntime.UI {
             // 全畫面點擊即推進，也擋住後面的場景與 HUD；按鈕會先吃掉自己的點擊
             _root = StoryUiKit.Stretch(StoryUiKit.Rect("Story Dialogue", canvas));
             _root.gameObject.AddComponent<Image>().color = Color.clear;
-            _root.gameObject.AddComponent<Button>().onClick.AddListener(() => OnAdvanceClick?.Invoke());
+            _root.gameObject.AddComponent<Button>().onClick.AddListener(HandleRootClick);
 
             // 所有畫面元素放在 Stage 底下，「震動」時整個畫面（含對話框）一起晃
             _stage = StoryUiKit.Stretch(StoryUiKit.Rect("Stage", _root));
@@ -185,6 +205,7 @@ namespace StoryRuntime.UI {
             BuildInput();
             BuildNameTag();
             BuildAuto();
+            BuildToolbar();
 
             // 下一句提示 ▾：不是每套字型都有這個字元，用畫的
             _nextRt = StoryUiKit.Rect("Next", _card);
@@ -195,6 +216,8 @@ namespace StoryRuntime.UI {
             _next.sprite = Caret();
             _next.color = NextInk;
             _next.raycastTarget = false;
+
+            BuildNotice();
 
             foreach (var text in _root.GetComponentsInChildren<TMP_Text>(true)) Tint(text);
             _root.gameObject.SetActive(false);
@@ -347,6 +370,165 @@ namespace StoryRuntime.UI {
             SetAuto(false);
         }
 
+        // AUTO 左邊一排同樣外觀的按鈕（原型沒有，照 AUTO 的樣式延伸）：由右往左 SKIP、LOG、速度、快讀、快存、隱藏
+        void BuildToolbar() {
+            _skipPill  = Pill("Skip", "SKIP", () => OnSkipClick?.Invoke());
+            Pill("Log", "LOG", () => OnBacklogClick?.Invoke());
+            _speedPill = Pill("Speed", "速度 普通", () => OnSpeedClick?.Invoke());
+            Pill("Quick Load", "快讀", () => OnQuickLoadClick?.Invoke());
+            Pill("Quick Save", "快存", () => OnQuickSaveClick?.Invoke());
+            Pill("Hide", "隱藏", () => SetUiHidden(true));
+            LayoutToolbar();
+        }
+
+        sealed class PillButton {
+            public RectTransform Rt;
+            public Image Edge, Fill;
+            public TextMeshProUGUI Label;
+        }
+
+        PillButton Pill(string name, string label, Action click) {
+            var rt = StoryUiKit.Rect(name, _card);
+            rt.anchorMin = rt.anchorMax = rt.pivot = Vector2.one;
+            var inner = StoryUiKit.Card(rt, Color.white, CardBorder, 8 * S);
+            var pill = new PillButton { Rt = rt, Edge = rt.GetComponent<Image>(), Fill = inner.GetComponent<Image>() };
+            pill.Edge.raycastTarget = true;
+            var btn = rt.gameObject.AddComponent<Button>();
+            btn.transition = Selectable.Transition.None;
+            btn.onClick.AddListener(() => click());
+            pill.Label = Text(inner, "Label", label, 11, AutoInkOff, TextAlignmentOptions.Center);
+            pill.Label.fontStyle = FontStyles.Bold;
+            StoryUiKit.Stretch(pill.Label.rectTransform);
+            _pills.Add(pill);
+            return pill;
+        }
+
+        void LayoutToolbar() {
+            float right = -22 * S - _auto.sizeDelta.x - 6 * S;
+            foreach (var pill in _pills) {
+                float width = 22 * S + pill.Label.GetPreferredValues(pill.Label.text).x + 2;
+                pill.Rt.sizeDelta = new Vector2(width, 28 * S);
+                pill.Rt.anchoredPosition = new Vector2(right, 14 * S);
+                right -= width + 6 * S;
+            }
+        }
+
+        static void SetPill(PillButton pill, bool on) {
+            pill.Fill.color  = on ? AutoFillOn : Color.white;
+            pill.Edge.color  = on ? AutoEdgeOn : CardBorder;
+            pill.Label.color = on ? AutoInkOn : AutoInkOff;
+        }
+
+        // 畫面上方中央的短暫提示（「已快速存檔」）
+        void BuildNotice() {
+            _notice = StoryUiKit.Rect("Notice", _root);
+            _notice.anchorMin = _notice.anchorMax = _notice.pivot = new Vector2(0.5f, 1);
+            _notice.anchoredPosition = new Vector2(0, -24 * S);
+            var inner = StoryUiKit.Card(_notice, NameFill, NameBorder, 9 * S);
+            _noticeText = Text(inner, "Text", "", 14, NameInk, TextAlignmentOptions.Center);
+            StoryUiKit.Stretch(_noticeText.rectTransform);
+            _noticeGroup = _notice.gameObject.AddComponent<CanvasGroup>();
+            _noticeGroup.blocksRaycasts = false;
+            _notice.gameObject.SetActive(false);
+        }
+
+        // ── 對話紀錄 ─────────────────────────────────────────
+
+        // 蓋在整個畫面上（含對話框），擋掉後面的點擊；右鍵、Esc、「關閉」收起
+        void BuildBacklog() {
+            _backlog = StoryUiKit.Stretch(StoryUiKit.Rect("Backlog", _root));
+            var dim = _backlog.gameObject.AddComponent<Image>();
+            dim.color = new Color(0.09f, 0.13f, 0.17f, 0.72f);
+
+            var panel = StoryUiKit.Stretch(StoryUiKit.Rect("Panel", _backlog));
+            panel.offsetMin = new Vector2(Gutter, 36 * S);
+            panel.offsetMax = new Vector2(-Gutter, -36 * S);
+            StoryUiKit.Card(panel, CardFill, CardBorder, 14 * S, CardShadow, new Vector2(0, -6 * S));
+
+            var title = Text(panel, "Title", "對話紀錄", 17, NameInk);
+            title.fontStyle = FontStyles.Bold;
+            var titleRt = title.rectTransform;
+            titleRt.anchorMin = new Vector2(0, 1); titleRt.anchorMax = Vector2.one; titleRt.pivot = new Vector2(0, 1);
+            titleRt.offsetMin = new Vector2(PadX, -(22 + 30) * S); titleRt.offsetMax = new Vector2(-PadX, -22 * S);
+
+            var close = ConfirmButton(panel, "關閉", new Vector2(96 * S, 32 * S));
+            var closeRt = (RectTransform)close.transform;
+            closeRt.anchorMin = closeRt.anchorMax = closeRt.pivot = Vector2.one;
+            closeRt.anchoredPosition = new Vector2(-PadX, -18 * S);
+            close.onClick.AddListener(HideBacklog);
+
+            var view = StoryUiKit.Stretch(StoryUiKit.Rect("View", panel));
+            view.offsetMin = new Vector2(PadX, PadY);
+            view.offsetMax = new Vector2(-PadX, -(22 + 30 + 14) * S);
+            view.gameObject.AddComponent<Image>().color = Color.clear;
+            view.gameObject.AddComponent<RectMask2D>();
+            _backlogScroll = view.gameObject.AddComponent<ScrollRect>();
+            _backlogScroll.horizontal = false;
+            _backlogScroll.movementType = ScrollRect.MovementType.Clamped;
+            _backlogScroll.scrollSensitivity = 40;
+            _backlogContent = StoryUiKit.Rect("Content", view);
+            _backlogContent.anchorMin = new Vector2(0, 1); _backlogContent.anchorMax = Vector2.one; _backlogContent.pivot = new Vector2(0.5f, 1);
+            _backlogContent.offsetMin = _backlogContent.offsetMax = Vector2.zero;
+            var col = _backlogContent.gameObject.AddComponent<VerticalLayoutGroup>();
+            col.spacing = 14 * S;
+            col.childControlWidth = col.childControlHeight = true;
+            col.childForceExpandWidth = true; col.childForceExpandHeight = false;
+            _backlogContent.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            _backlogScroll.viewport = view; _backlogScroll.content = _backlogContent;
+
+            foreach (var text in _backlog.GetComponentsInChildren<TMP_Text>(true)) Tint(text);
+            _backlog.gameObject.SetActive(false);
+        }
+
+        public void ShowBacklog(IReadOnlyList<StoryBacklog.Entry> entries) {
+            if (_backlog == null) BuildBacklog();
+            Clear(_backlogContent);
+            foreach (var entry in entries) BacklogRow(entry);
+            _backlog.gameObject.SetActive(true);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_backlogContent);
+            _backlogScroll.verticalNormalizedPosition = 0;   // 從最新的一句開始往回看
+        }
+
+        public void HideBacklog() {
+            if (_backlog == null || !_backlog.gameObject.activeSelf) return;
+            _backlog.gameObject.SetActive(false);
+            Clear(_backlogContent);
+        }
+
+        void BacklogRow(StoryBacklog.Entry entry) {
+            var row = StoryUiKit.Rect("Entry", _backlogContent);
+            var col = row.gameObject.AddComponent<VerticalLayoutGroup>();
+            col.spacing = 2 * S;
+            col.childControlWidth = col.childControlHeight = true;
+            col.childForceExpandWidth = true; col.childForceExpandHeight = false;
+
+            string head = entry.Kind == StoryBacklog.Kind.Choice ? "選擇"
+                        : entry.Kind == StoryBacklog.Kind.Input ? $"輸入　{entry.Speaker}"
+                        : entry.Speaker;
+            if (!string.IsNullOrEmpty(head)) {
+                var name = Text(row, "Speaker", head, 13, entry.Kind == StoryBacklog.Kind.Line ? NameInk : MutedInk);
+                name.fontStyle = FontStyles.Bold;
+                Tint(name);
+            }
+            var body = Text(row, "Text", entry.Text, 17, entry.Kind == StoryBacklog.Kind.Line ? TextInk : ChoiceInk);
+            body.textWrappingMode = TextWrappingModes.Normal;
+            body.lineSpacing = StoryUiKit.LineSpacingFor(body, 1.6f);
+            Tint(body);
+        }
+
+        // ── 隱藏對話框 ───────────────────────────────────────
+
+        // 隱藏後點任何地方（或右鍵、Space、Enter）只把對話框叫回來，不會前進
+        public void SetUiHidden(bool hidden) {
+            _uiHidden = hidden;
+            _card.gameObject.SetActive(!hidden);
+        }
+
+        void HandleRootClick() {
+            if (_uiHidden) { SetUiHidden(false); return; }
+            OnAdvanceClick?.Invoke();
+        }
+
         // ── IStoryDialogueView ───────────────────────────────
 
         public void Open() {
@@ -373,6 +555,8 @@ namespace StoryRuntime.UI {
             _motion = null;
             _motionOffsets = null;
             ClearPortraits();
+            HideBacklog();
+            SetUiHidden(false);
             ShowChoices(Array.Empty<StoryChoiceItem>());
             ShowInput(Array.Empty<StoryInputItem>());
             _root.gameObject.SetActive(false);
@@ -587,6 +771,31 @@ namespace StoryRuntime.UI {
             _autoEdge.color  = on ? AutoEdgeOn : CardBorder;
             _autoLabel.color = on ? AutoInkOn : AutoInkOff;
             _autoDot.color   = on ? AutoDotOn : AutoDotOff;
+        }
+
+        public void SetSkip(bool on) {
+            _skipOn = on;
+            SetPill(_skipPill, on);
+        }
+
+        public void SetSpeedLabel(string label) {
+            _speedPill.Label.text = $"速度 {label}";
+            LayoutToolbar();
+        }
+
+        public void ShowNotice(string message) {
+            _noticeText.text = message;
+            _notice.sizeDelta = new Vector2(_noticeText.GetPreferredValues(message).x + 40 * S, 34 * S);
+            _noticeRemaining = NoticeSeconds;
+            _noticeGroup.alpha = 1;
+            _notice.gameObject.SetActive(true);
+        }
+
+        void UpdateNotice(float dt) {
+            if (_noticeRemaining <= 0) return;
+            _noticeRemaining -= dt;
+            _noticeGroup.alpha = Mathf.Clamp01(_noticeRemaining / NoticeFade);
+            if (_noticeRemaining <= 0) _notice.gameObject.SetActive(false);
         }
 
         public void StartAutoTimer(double seconds) => _autoRemaining = (float)seconds;
@@ -809,6 +1018,7 @@ namespace StoryRuntime.UI {
 
             UpdatePortraits(dt);
             UpdateMotion(dt);
+            UpdateNotice(dt);
             // 遮罩淡入淡出 220ms
             _shadeAlpha = Mathf.MoveTowards(_shadeAlpha, _narrative ? 1 : 0, dt / ShadeEase);
             var shade = ShadeColor;
@@ -824,9 +1034,30 @@ namespace StoryRuntime.UI {
         // 那種專案請另外把按鍵接到 Advance 之類的事件上
         void ReadKeys() {
 #if ENABLE_LEGACY_INPUT_MANAGER
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-                OnAdvanceClick?.Invoke();
+            bool next = Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+            if (IsBacklogOpen) {
+                if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1)) HideBacklog();
+                return;
+            }
+            if (Input.GetMouseButtonDown(1)) { SetUiHidden(!_uiHidden); return; }   // 右鍵：隱藏／叫回對話框
+            if (_uiHidden) {
+                if (next) SetUiHidden(false);
+                return;
+            }
+            if (Input.mouseScrollDelta.y > 0 && !OverScrollArea()) { OnBacklogClick?.Invoke(); return; }   // 滾輪往上：對話紀錄
+            if (next) OnAdvanceClick?.Invoke();
             if (Input.GetKeyDown(KeyCode.Escape) && _autoOn) OnAutoClick?.Invoke();   // Esc 關掉 AUTO
+#endif
+        }
+
+        // 長台詞與選項列表自己會捲動，滑鼠在它們上面時滾輪歸它們
+        bool OverScrollArea() {
+#if ENABLE_LEGACY_INPUT_MANAGER
+            var cam = GetComponent<Canvas>().worldCamera;
+            return RectTransformUtility.RectangleContainsScreenPoint(_bodyView, Input.mousePosition, cam) && _bodyContent.rect.height > _bodyView.rect.height
+                || _listView.gameObject.activeSelf && RectTransformUtility.RectangleContainsScreenPoint(_listView, Input.mousePosition, cam);
+#else
+            return false;
 #endif
         }
 

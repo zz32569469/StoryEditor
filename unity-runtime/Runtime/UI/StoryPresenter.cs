@@ -58,10 +58,22 @@ namespace StoryRuntime.UI {
         public const double SentencePause = 0.15;    // 。！？!?… 之後停 150ms
         const double AutoMin = 1.4, AutoMax = 5.0, AutoPerChar = 0.065;
 
+        // 略過時每句停留的時間：快到看不清，但還看得出在一句一句跳
+        public const double SkipDelay = 0.05;
+
+        // 文字速度的段數：倍率 1 = 每字 35ms；0 = 整句直接出現
+        public static readonly (string Label, double Speed)[] SpeedSteps = { ("慢", 0.5), ("普通", 1), ("快", 2), ("瞬間", 0) };
+
         // AUTO 在整句顯示完後停留 max(1400, min(5000, 字數×65)) ms 才換句
         public static double AutoDelay(int chars) => Math.Max(AutoMin, Math.Min(AutoMax, chars * AutoPerChar));
 
-        public static TypewriterSchedule Schedule(ParsedText parsed) => Typewriter.Build(parsed, 1 / CharSeconds, SentencePause);
+        public static TypewriterSchedule Schedule(ParsedText parsed) => Schedule(parsed, 1);
+
+        // 速度倍率同時套用在每字時間與句末停頓；0（瞬間）用一般速度排程，再由 Presenter 直接補完
+        public static TypewriterSchedule Schedule(ParsedText parsed, double speed) {
+            if (speed <= 0) speed = 1;
+            return Typewriter.Build(parsed, speed / CharSeconds, SentencePause / speed);
+        }
 
         static readonly Regex _datePattern = new Regex(@"^\d{4}-\d{2}-\d{2}$");
         static readonly StoryChoiceItem[] _noChoices = Array.Empty<StoryChoiceItem>();
@@ -98,6 +110,21 @@ namespace StoryRuntime.UI {
         public event Action<IReadOnlyList<string>> OnUnlocks;
         public event Action<string> OnInputHint;
 
+        // 閱讀輔助。對話紀錄與讀過的句子由控制器保管、跨場景共用；快速存檔沒給存放處時按鈕沒有作用
+        public StoryBacklog Backlog { get; set; } = new StoryBacklog();
+        public StoryReadHistory ReadHistory { get; set; } = new StoryReadHistory();
+        public IStoryQuickSaveStore QuickSaves { get; set; }
+        public bool Skip { get; private set; }
+
+        double _textSpeed = 1;
+        public double TextSpeed {
+            get => _textSpeed;
+            set {
+                _textSpeed = Math.Max(0, value);
+                _view.SetSpeedLabel(SpeedLabelOf(_textSpeed));
+            }
+        }
+
         public StoryState State { get; private set; }
         public bool IsFinished => State == null || State.Status == PlayerStatus.Ended || State.Status == PlayerStatus.Error;
         public bool IsPlaying => State != null && !IsFinished;
@@ -122,6 +149,12 @@ namespace StoryRuntime.UI {
             _view.OnLineShown    += HandleLineShown;
             _view.OnAutoElapsed  += HandleAutoElapsed;
             _view.OnReveal       += HandleReveal;
+            _view.OnBacklogClick   += HandleBacklogClick;
+            _view.OnSkipClick      += HandleSkipClick;
+            _view.OnSpeedClick     += HandleSpeedClick;
+            _view.OnQuickSaveClick += HandleQuickSave;
+            _view.OnQuickLoadClick += HandleQuickLoad;
+            _view.SetSpeedLabel(SpeedLabelOf(_textSpeed));
         }
 
         public void Dispose() {
@@ -132,6 +165,11 @@ namespace StoryRuntime.UI {
             _view.OnLineShown    -= HandleLineShown;
             _view.OnAutoElapsed  -= HandleAutoElapsed;
             _view.OnReveal       -= HandleReveal;
+            _view.OnBacklogClick   -= HandleBacklogClick;
+            _view.OnSkipClick      -= HandleSkipClick;
+            _view.OnSpeedClick     -= HandleSpeedClick;
+            _view.OnQuickSaveClick -= HandleQuickSave;
+            _view.OnQuickLoadClick -= HandleQuickLoad;
         }
 
         // ── 開始 ─────────────────────────────────────────────
@@ -158,6 +196,7 @@ namespace StoryRuntime.UI {
             Auto = false;
             _view.Open();
             _view.SetAuto(false);
+            SetSkip(false);
         }
 
         // ── 玩家操作 ─────────────────────────────────────────
@@ -165,6 +204,8 @@ namespace StoryRuntime.UI {
         // 點一下先補完當句，句子完整後再點才前進
         void HandleAdvance() {
             if (!IsPlaying) return;
+            // 略過中點一下：停下來，不前進
+            if (Skip) { SetSkip(false); return; }
             if (_view.IsTyping) { _view.RevealAll(); return; }
             if (State.Status != PlayerStatus.Line) return;
             Next();
@@ -172,6 +213,8 @@ namespace StoryRuntime.UI {
 
         void HandleChoice(string choiceId) {
             if (!IsPlaying || State.Status != PlayerStatus.Choices) return;
+            var chosen = StoryPlayer.CurrentNode(_project, State)?.Choices.Find(c => c.Id == choiceId);
+            if (chosen != null) Record(StoryBacklog.Kind.Choice, "", _markup.Render(Render(TextOf(chosen.Text))));
             State = StoryPlayer.Choose(_project, State, choiceId, _variables, _options);
             Present();
         }
@@ -195,6 +238,7 @@ namespace StoryRuntime.UI {
                 values[name] = StoryValue.Text(text);
             }
 
+            foreach (var pair in values) Record(StoryBacklog.Kind.Input, InputLabelOf(pair.Key, DeclaredOf(pair.Key)), pair.Value.AsString);
             State = StoryPlayer.SubmitInput(_project, State, values, _variables, _options);
             Present();
         }
@@ -210,6 +254,7 @@ namespace StoryRuntime.UI {
 
         // 分支與輸入不會自動代選，所以只在台詞上倒數
         void HandleLineShown() {
+            if (Skip) return;
             if (Auto && IsPlaying && State.Status == PlayerStatus.Line) _view.StartAutoTimer(AutoDelay(_lineChars));
         }
 
@@ -225,8 +270,87 @@ namespace StoryRuntime.UI {
         }
 
         void HandleAutoElapsed() {
-            if (!Auto || !IsPlaying || State.Status != PlayerStatus.Line || _view.IsTyping) return;
+            if (!(Auto || Skip) || !IsPlaying || State.Status != PlayerStatus.Line || _view.IsTyping) return;
             Next();
+        }
+
+        // ── 閱讀輔助 ─────────────────────────────────────────
+
+        // 打開對話紀錄時停下 AUTO 與略過：玩家要回頭看，劇情不該自己往前跑
+        void HandleBacklogClick() {
+            if (!IsPlaying) return;
+            if (Auto) HandleAutoClick();
+            SetSkip(false);
+            _view.ShowBacklog(Backlog.Entries);
+        }
+
+        // 略過只快轉讀過的句子；目前這句已經顯示過，從它開始跳
+        void HandleSkipClick() {
+            if (!IsPlaying) return;
+            SetSkip(!Skip);
+            if (Skip && State.Status == PlayerStatus.Line) {
+                _view.RevealAll();
+                _view.StartAutoTimer(SkipDelay);
+            } else if (Skip) {
+                SetSkip(false);
+            }
+        }
+
+        void SetSkip(bool on) {
+            Skip = on;
+            _view.SetSkip(on);
+            if (!on) _view.CancelAutoTimer();
+        }
+
+        void HandleSpeedClick() {
+            int index = Array.FindIndex(SpeedSteps, s => s.Speed == _textSpeed);
+            TextSpeed = SpeedSteps[(index + 1) % SpeedSteps.Length].Speed;
+        }
+
+        static string SpeedLabelOf(double speed) {
+            foreach (var step in SpeedSteps) if (step.Speed == speed) return step.Label;
+            return $"×{speed:0.##}";
+        }
+
+        void HandleQuickSave() {
+            if (!IsPlaying || QuickSaves == null) return;
+            QuickSaves.Save(CaptureQuickSave());
+            _view.ShowNotice("已快速存檔");
+        }
+
+        void HandleQuickLoad() {
+            if (!IsPlaying || QuickSaves == null) return;
+            var data = QuickSaves.Load();
+            if (data == null) { _view.ShowNotice("還沒有快速存檔"); return; }
+            ApplyQuickSave(data);
+            _view.ShowNotice("已讀取快速存檔");
+        }
+
+        // 存下目前這一句。對話紀錄的最後一筆如果就是這一句，不存進去 —— 讀檔回來會再顯示一次、再記一次
+        public StoryQuickSave CaptureQuickSave() {
+            var data = new StoryQuickSave { SceneId = State.SceneId, NodeId = State.NodeId, Read = ReadHistory.Keys };
+            foreach (var variable in _project.Variables) {
+                if (_variables.TryGet(variable.Id, out StoryValue value)) data.Variables[variable.Id] = StoryQuickSave.Encode(value);
+            }
+            data.Backlog.AddRange(Backlog.Entries);
+            int last = data.Backlog.Count - 1;
+            if (last >= 0 && data.Backlog[last].Kind == StoryBacklog.Kind.Line &&
+                data.Backlog[last].SceneId == State.SceneId && data.Backlog[last].NodeId == State.NodeId) {
+                data.Backlog.RemoveAt(last);
+            }
+            return data;
+        }
+
+        public void ApplyQuickSave(StoryQuickSave data) {
+            foreach (var pair in data.Variables) _variables.Set(pair.Key, StoryQuickSave.Decode(pair.Value));
+            ReadHistory.Load(data.Read);
+            Backlog.Load(data.Backlog);
+            Resume(data.SceneId, data.NodeId);
+        }
+
+        void Record(StoryBacklog.Kind kind, string speaker, string text) {
+            if (string.IsNullOrEmpty(text)) return;
+            Backlog.Add(new StoryBacklog.Entry { Kind = kind, Speaker = speaker, Text = text, SceneId = State.SceneId, NodeId = State.NodeId });
         }
 
         void Next() {
@@ -260,6 +384,7 @@ namespace StoryRuntime.UI {
 
             if (State.Status == PlayerStatus.Input) {
                 // 輸入節點沒有台詞：保留上一句（通常就是在問這個問題）
+                SetSkip(false);
                 _view.ShowChoices(_noChoices);
                 _view.ShowInput(InputsOf(State.PendingInputs));
                 return;
@@ -270,8 +395,22 @@ namespace StoryRuntime.UI {
             _parsed = parsed;
             _revealedChars = 0;
             _lineChars = parsed.Chars.Count;
-            _view.ShowLine(_speakers.DisplayName(label), _markup.Render(parsed), Schedule(parsed), TextMotion.Build(parsed));
+            bool wasRead = ReadHistory.IsRead(State.SceneId, node.Id);
+            ReadHistory.MarkRead(State.SceneId, node.Id);
+            string markup = _markup.Render(parsed);
+            string name = _speakers.DisplayName(label);
+            _view.ShowLine(name, markup, Schedule(parsed, _textSpeed), TextMotion.Build(parsed));
             _view.ShowChoices(State.Status == PlayerStatus.Choices ? ChoicesOf(node) : _noChoices);
+            Record(StoryBacklog.Kind.Line, string.IsNullOrEmpty(TextOf(node.Text)) ? "" : name, markup);
+
+            // 略過碰到沒讀過的句子、選項就停
+            if (Skip && wasRead && State.Status == PlayerStatus.Line) {
+                _view.RevealAll();
+                _view.StartAutoTimer(SkipDelay);
+            } else {
+                if (Skip) SetSkip(false);
+                if (_textSpeed <= 0) _view.RevealAll();
+            }
         }
 
         // ── 演出 ─────────────────────────────────────────────

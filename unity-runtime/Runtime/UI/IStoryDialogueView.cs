@@ -37,6 +37,13 @@ namespace StoryRuntime.UI {
         // 逐字推進到第幾個字（visible 為目前顯示的字數）。點擊補完整句不發，那些字的 [sfx] 就跳過
         event Action<int> OnReveal;
 
+        // 閱讀輔助：對話紀錄、略過、文字速度、快速存讀檔（隱藏對話框是畫面自己的事，不經過 Presenter）
+        event Action OnBacklogClick;
+        event Action OnSkipClick;
+        event Action OnSpeedClick;
+        event Action OnQuickSaveClick;
+        event Action OnQuickLoadClick;
+
         bool IsTyping { get; }
 
         void Open();
@@ -62,6 +69,13 @@ namespace StoryRuntime.UI {
         void SetAuto(bool on);
         void StartAutoTimer(double seconds);
         void CancelAutoTimer();
+
+        // ── 閱讀輔助 ──
+        void SetSkip(bool on);
+        void SetSpeedLabel(string label);
+        void ShowBacklog(IReadOnlyList<StoryBacklog.Entry> entries);
+        // 短暫的提示，例如「已快速存檔」
+        void ShowNotice(string message);
 
         // ── 演出（docs/FORMAT.md §3.5）──
         // 背景：sprite 為 null 代表「無」（全黑）；fade > 0 時交叉淡化
