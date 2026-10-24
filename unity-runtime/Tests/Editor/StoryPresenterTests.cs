@@ -338,6 +338,32 @@ namespace StoryRuntime.UI.Tests {
         }
 
         [Test]
+        public void Motion_ShakeAndWavePassedPerChar() {
+            var (p, _, _) = StartStage();
+            Assert.IsNull(_view.Motion, "沒有 shake／wave 的句子不必逐頂點動畫");
+            p.Dispose();
+
+            var project = StoryLoader.FromJson(Json);
+            foreach (var name in new[] { "shake", "wave" }) {
+                project.TagRegistry.Add(new TagDef {
+                    Name = name, Kind = "paired",
+                    Params = new List<TagParamDef> {
+                        new TagParamDef { Name = "amp", Type = "number", DefaultValue = 2.0 },
+                        new TagParamDef { Name = "freq", Type = "number", DefaultValue = 20.0 },
+                    },
+                });
+            }
+            project.Scenes[0].Nodes[0].Text["zh"] = "早[wave]安[/wave][shake amp=4]。[/shake]";
+            var q = new StoryPresenter(_view, project, new InMemoryStoryVariables(), _table);
+            q.Start("s");
+            Assert.AreEqual(3, _view.Motion.Length);
+            Assert.IsNull(_view.Motion[0]);
+            Assert.AreEqual(MotionKind.Wave, _view.Motion[1][0].Kind);
+            Assert.AreEqual(4, _view.Motion[2][0].Amp);
+            q.Dispose();
+        }
+
+        [Test]
         public void Stage_InlineSfxPlaysWhenTypingReachesThatChar() {
             var (p, audio, _) = StartStage();
             audio.Log.Clear();
@@ -514,8 +540,9 @@ namespace StoryRuntime.UI.Tests {
 
             public void Open() => IsOpen = true;
             public void Close() => IsOpen = false;
-            public void ShowLine(string speaker, string markup, TypewriterSchedule schedule) {
-                Speaker = speaker; Markup = markup; AutoTimer = -1;
+            public MotionTag[][] Motion;
+            public void ShowLine(string speaker, string markup, TypewriterSchedule schedule, MotionTag[][] motion) {
+                Speaker = speaker; Markup = markup; AutoTimer = -1; Motion = motion;
             }
             public void RevealAll() { RevealCount++; IsTyping = false; }
             public void ShowChoices(IReadOnlyList<StoryChoiceItem> choices) => Choices = choices.ToList();

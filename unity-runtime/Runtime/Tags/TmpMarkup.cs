@@ -48,9 +48,9 @@ namespace StoryRuntime.Tags {
                 close.Append("</font>");
             });
 
-            // shake / wave 沒有 TMP 對應，要逐頂點動畫才做得出來（見 README 的「還沒做的」）。
+            // shake / wave 沒有 TMP 對應，由 TextMotion 算位移、畫面層逐頂點動畫。
             // 這裡刻意不註冊：未註冊的成對標籤不產生任何標記，文字照樣顯示，
-            // 而 ParsedChar.Effects 仍留著資訊，之後做頂點動畫時直接讀得到。
+            // 字的索引也不會被打亂（TextMotion 用同一個索引對回 TMP 的字元）。
 
             return map;
         }

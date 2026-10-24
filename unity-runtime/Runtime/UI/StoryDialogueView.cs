@@ -104,6 +104,9 @@ namespace StoryRuntime.UI {
         bool _lineShownPending, _autoOn, _narrative, _layoutDirty;
         float _autoRemaining = -1, _shadeAlpha;
         string _speakerWho;
+        MotionTag[][] _motion;
+        Vector2[] _motionOffsets;
+        float _motionTime;
         readonly List<PortraitActor> _actors = new List<PortraitActor>();
 
         public bool IsTyping => _schedule != null && _elapsed < _schedule.Total;
@@ -367,13 +370,15 @@ namespace StoryRuntime.UI {
             _lineShownPending = false;
             _autoRemaining = -1;
             _body.text = "";
+            _motion = null;
+            _motionOffsets = null;
             ClearPortraits();
             ShowChoices(Array.Empty<StoryChoiceItem>());
             ShowInput(Array.Empty<StoryInputItem>());
             _root.gameObject.SetActive(false);
         }
 
-        public void ShowLine(string speaker, string markup, TypewriterSchedule schedule) {
+        public void ShowLine(string speaker, string markup, TypewriterSchedule schedule, MotionTag[][] motion) {
             _nameTag.gameObject.SetActive(!string.IsNullOrEmpty(speaker));
             _name.text = speaker;
             float tagWidth = Mathf.Max(78 * S, _name.GetPreferredValues(speaker).x + 32 * S + 2);
@@ -385,6 +390,9 @@ namespace StoryRuntime.UI {
             _revealed = 0;
             _body.maxVisibleCharacters = 0;
             _bodyContent.anchoredPosition = Vector2.zero;
+            _motion = motion;
+            _motionOffsets = motion != null ? new Vector2[motion.Length] : null;
+            _motionTime = 0;
             _lineShownPending = true;
             _autoRemaining = -1;
             _layoutDirty = true;
@@ -695,6 +703,31 @@ namespace StoryRuntime.UI {
             OnInputSubmit?.Invoke(values);
         }
 
+        // 第 i 個字目前被 [shake]／[wave] 移了多少（畫布單位）；測試與換皮檢查用
+        public Vector2 MotionOffset(int index) =>
+            _motionOffsets != null && index >= 0 && index < _motionOffsets.Length ? _motionOffsets[index] : Vector2.zero;
+
+        // 逐頂點動畫：每幀讓 TMP 重建一次網格（回到排版位置），再把有效果的字的四個頂點加上位移。
+        // 第 i 個字就是 TMP 的第 i 個字元（TmpMarkup 保證標記只插在字與字之間）
+        void UpdateMotion(float dt) {
+            if (_motion == null) return;
+            _motionTime += dt;
+            _body.ForceMeshUpdate();
+            var info = _body.textInfo;
+            int count = Mathf.Min(info.characterCount, _motion.Length);
+            for (int i = 0; i < count; i += 1) {
+                var tags = _motion[i];
+                var ch = info.characterInfo[i];
+                if (tags == null || !ch.isVisible) continue;
+                var (x, y) = TextMotion.Offset(tags, i, _motionTime);
+                var offset = new Vector3((float)x * S, (float)y * S, 0);   // 標籤的振幅是原型 1024 寬下的 px
+                var vertices = info.meshInfo[ch.materialReferenceIndex].vertices;
+                for (int v = 0; v < 4; v += 1) vertices[ch.vertexIndex + v] += offset;
+                _motionOffsets[i] = offset;
+            }
+            _body.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);
+        }
+
         void SetRevealed(int visible, bool typing = true) {
             if (visible == _revealed) return;
             // 只在數字變了才寫回：maxVisibleCharacters 每次設定都會讓 TMP 重建網格
@@ -775,6 +808,7 @@ namespace StoryRuntime.UI {
             _next.color = next;
 
             UpdatePortraits(dt);
+            UpdateMotion(dt);
             // 遮罩淡入淡出 220ms
             _shadeAlpha = Mathf.MoveTowards(_shadeAlpha, _narrative ? 1 : 0, dt / ShadeEase);
             var shade = ShadeColor;

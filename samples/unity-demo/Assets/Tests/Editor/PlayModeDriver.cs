@@ -68,6 +68,8 @@ namespace StoryDemo.Tests {
         public float Curtain, Eyes, Flash, CardHeight, PortraitDrop, Scroll, ShadeAlpha;
         public Vector2 Shake;
         public List<StoryDialogueView.PortraitInfo> Portraits;
+        // 每個字被 [shake]／[wave] 移了多少：View 回報的位移，與網格頂點實際離開排版位置的距離
+        public List<Vector2> Motion, VertexShift;
 
         // 場上（不含正在退場）的角色
         public StoryDialogueView.PortraitInfo? Actor(string who) {
@@ -189,6 +191,17 @@ namespace StoryDemo.Tests {
         static LineSnapshot Snapshot(StoryDialogueView view, RectTransform root, RectTransform card, string text) {
             var shade = root.Find("Stage/Narrative Shade").GetComponent<Image>().color.a;
             var portraits = view.Portraits;
+            var body = card.Find("Body/Content/Text").GetComponent<TextMeshProUGUI>();
+            var info = body.textInfo;
+            var motion = new List<Vector2>();
+            var shift = new List<Vector2>();
+            for (int i = 0; i < info.characterCount; i += 1) {
+                motion.Add(view.MotionOffset(i));
+                var ch = info.characterInfo[i];
+                shift.Add(ch.isVisible
+                    ? (Vector2)(info.meshInfo[ch.materialReferenceIndex].vertices[ch.vertexIndex] - ch.vertex_BL.position)
+                    : Vector2.zero);
+            }
             return new LineSnapshot {
                 Text = text,
                 Background = view.BackgroundSprite != null ? view.BackgroundSprite.name : null,
@@ -201,6 +214,8 @@ namespace StoryDemo.Tests {
                 Narrative = shade > 0.01f,
                 ShadeAlpha = shade,
                 Portraits = portraits,
+                Motion = motion,
+                VertexShift = shift,
                 PortraitDrop = portraits.Count == 0 ? 0 : portraits.Max(p => p.Drop),
                 CardHeight = card.rect.height,
                 Scroll = ((RectTransform)card.Find("Body/Content")).anchoredPosition.y,
