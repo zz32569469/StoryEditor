@@ -9,6 +9,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -22,6 +25,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "background": {
           "key": "店內-白天"
@@ -39,6 +45,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "background": {
           "key": null
@@ -58,6 +67,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "cg": {
           "key": null
@@ -74,6 +86,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [
           "背景「兩個 代號」只能寫一個代號"
         ],
@@ -99,6 +114,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -136,6 +154,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -174,6 +195,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -198,6 +222,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -218,6 +245,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [
           "畫面效果「轉圈」不認得（可用：睜眼、閉眼、黑幕、淡出、淡入、溶接、震動、閃白）",
           "畫面效果「淡入 1 2」參數太多，淡入最多 1 個",
@@ -239,6 +269,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -252,6 +285,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "bgm": {
           "key": "早晨的店",
@@ -269,6 +305,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "bgm": {
           "key": "早晨的店",
@@ -286,6 +325,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "bgm": {
           "key": null,
@@ -303,6 +345,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [
           "OST「早晨 慢 一點」只能寫「代號 秒數」或「停止 秒數」",
           "OST「早晨 慢 一點」的秒數「慢」不是數字"
@@ -332,6 +377,9 @@
         ],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -358,6 +406,9 @@
         ],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -371,6 +422,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [
           "屬性變化「信任1」看不懂，寫法是「名稱±數字」，多個用「，」分隔",
           "屬性變化「幹勁+」看不懂，寫法是「名稱±數字」，多個用「，」分隔"
@@ -404,6 +458,9 @@
           }
         ],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": []
       }
     },
@@ -417,6 +474,9 @@
         "attributes": [],
         "items": [],
         "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [
           "物品消耗「咖啡豆×」寫法是「代號×數量」",
           "物品消耗「兩 包」寫法是「代號×數量」"
@@ -437,6 +497,9 @@
           "咖啡機",
           "收銀台"
         ],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "target": "新人"
       }
@@ -480,6 +543,9 @@
         "unlocks": [
           "吧台"
         ],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
         "issues": [],
         "background": {
           "key": "店門口"
@@ -492,6 +558,208 @@
           "fade": 2
         },
         "target": "店長"
+      }
+    },
+    {
+      "stage": {},
+      "portrait": "店長-微笑",
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "portraits": [
+          {
+            "who": null,
+            "key": "店長-微笑"
+          }
+        ],
+        "positions": [],
+        "portraitEffects": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "position": "左",
+        "portraitEffect": "淡入"
+      },
+      "portrait": "店長-微笑",
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "portraits": [
+          {
+            "who": null,
+            "key": "店長-微笑"
+          }
+        ],
+        "positions": [
+          {
+            "who": null,
+            "slot": "左"
+          }
+        ],
+        "portraitEffects": [
+          {
+            "who": null,
+            "name": "淡入",
+            "seconds": 0.3
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "position": "熟客：右，店長:左",
+        "portraitEffect": "熟客：右滑入 0.5，左滑出"
+      },
+      "portrait": "熟客：熟客-普通",
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "portraits": [
+          {
+            "who": "熟客",
+            "key": "熟客-普通"
+          }
+        ],
+        "positions": [
+          {
+            "who": "熟客",
+            "slot": "右"
+          },
+          {
+            "who": "店長",
+            "slot": "左"
+          }
+        ],
+        "portraitEffects": [
+          {
+            "who": "熟客",
+            "name": "右滑入",
+            "seconds": 0.5
+          },
+          {
+            "who": null,
+            "name": "左滑出",
+            "seconds": 0.3
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "portraitEffect": "淡出 1"
+      },
+      "portrait": "無",
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "portraits": [
+          {
+            "who": null,
+            "key": null
+          }
+        ],
+        "positions": [],
+        "portraitEffects": [
+          {
+            "who": null,
+            "name": "淡出",
+            "seconds": 1
+          }
+        ],
+        "issues": []
+      }
+    },
+    {
+      "stage": {},
+      "portrait": "熟客：無，新人-開心",
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "portraits": [
+          {
+            "who": "熟客",
+            "key": null
+          },
+          {
+            "who": null,
+            "key": "新人-開心"
+          }
+        ],
+        "positions": [],
+        "portraitEffects": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "position": "上，熟客：中間",
+        "portraitEffect": "轉圈，淡入 慢，左滑入 0.2 1"
+      },
+      "portrait": "兩個 代號",
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "portraits": [
+          {
+            "who": null,
+            "key": "兩個 代號"
+          }
+        ],
+        "positions": [],
+        "portraitEffects": [],
+        "issues": [
+          "立繪「兩個 代號」只能寫一個代號",
+          "位置「上」只能寫左、中、右",
+          "位置「熟客：中間」只能寫左、中、右",
+          "立繪效果「轉圈」不認得（可用：淡入、淡出、左滑入、右滑入、左滑出、右滑出）",
+          "立繪效果「淡入 慢」的秒數「慢」不是數字",
+          "立繪效果「左滑入 0.2 1」參數太多，最多 1 個（秒數）"
+        ]
+      }
+    },
+    {
+      "stage": {
+        "position": "：左，熟客：",
+        "portraitEffect": "熟客："
+      },
+      "portrait": "：微笑",
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "portraits": [],
+        "positions": [],
+        "portraitEffects": [],
+        "issues": [
+          "立繪「：微笑」冒號前寫角色、冒號後寫內容",
+          "位置「：左」冒號前寫角色、冒號後寫內容",
+          "位置「熟客：」冒號前寫角色、冒號後寫內容",
+          "立繪效果「熟客：」冒號前寫角色、冒號後寫內容"
+        ]
       }
     }
   ]

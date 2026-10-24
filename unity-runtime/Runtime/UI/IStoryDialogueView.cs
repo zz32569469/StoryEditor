@@ -46,8 +46,17 @@ namespace StoryRuntime.UI {
         void ShowChoices(IReadOnlyList<StoryChoiceItem> choices);
         void ShowInput(IReadOnlyList<StoryInputItem> fields);
         void ShowInputError(string message);
-        void SetPortrait(Sprite sprite);
-        void SetPortraitSpeaking(bool speaking);
+
+        // ── 立繪（who 是角色的顯示名，例「店長」；slot 是「左」「中」「右」）──
+        // 出現或換表情，不帶轉場；已經在場上而 slot 不同時移過去
+        void ShowPortrait(string who, Sprite sprite, string slot);
+        void MovePortrait(string who, string slot);
+        // 淡入、淡出、左滑入、右滑入、左滑出、右滑出；淡出與滑出播完就移除
+        void PlayPortraitEffect(string who, string effect, float seconds);
+        void RemovePortrait(string who);
+        // 說話的角色站在原位，其他人往下 10px；null = 沒有角色在說話（旁白、內心話）
+        void SetSpeaker(string who);
+
         void SetNarrative(bool narrative);
         void SetAuto(bool on);
         void StartAutoTimer(double seconds);

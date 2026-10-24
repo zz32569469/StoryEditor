@@ -18,9 +18,9 @@ export function checkScript(project: StoryProject): ValidationIssue[] {
     ...new Set(project.variables.filter((v) => v.type === 'number').map((v) => v.label?.trim()).filter(Boolean)),
   ];
 
-  const check = (sheet: string, id: string, stage: Stage | undefined) => {
-    if (!stage) return;
-    const parsed = parseStage(stage);
+  const check = (sheet: string, id: string, stage: Stage | undefined, portrait?: string) => {
+    if (!stage && !portrait) return;
+    const parsed = parseStage(stage, portrait);
     for (const message of parsed.issues) {
       issues.push({ level: 'error', path: `${sheet} / ID ${id}`, message });
     }
@@ -48,7 +48,7 @@ export function checkScript(project: StoryProject): ValidationIssue[] {
   // 用來源表的寫法定位（工作表＋ID 欄），作者才能直接在 Excel 找到那一列
   for (const scene of project.scenes) {
     for (const node of scene.nodes) {
-      check(scene.name, node.source?.id ?? node.id, node.stage);
+      check(scene.name, node.source?.id ?? node.id, node.stage, node.portrait ?? undefined);
       for (const choice of node.choices) check(scene.name, choice.sourceId ?? choice.id, choice.stage);
       for (const branch of node.branches) check(scene.name, branch.sourceId ?? branch.id, branch.stage);
     }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createEmptyProject, createNode, createScene } from '../schema/factory';
 import { validateStoryProject } from '../schema/validate';
+import { checkScript } from '../schema/scriptCheck';
 import { parseStage } from './directives';
 
 describe('演出欄位解析', () => {
@@ -76,5 +77,32 @@ describe('舊專案檔的演出欄位', () => {
     const migrated = loaded!.scenes[0]!.nodes[0]!;
     expect(migrated.stage).toEqual({ background: '店門口', screenEffect: '睜眼效果' });
     expect(migrated.extras).toEqual({ 備註: '保留' });
+  });
+});
+
+describe('立繪、位置、立繪效果', () => {
+  it('三欄一起解析：可指定角色，沒指定就是說話者；效果預設 0.3 秒', () => {
+    const parsed = parseStage({ position: '熟客：右，左', portraitEffect: '右滑入，店長：淡出 1' }, '熟客：熟客-普通');
+    expect(parsed.portraits).toEqual([{ who: '熟客', key: '熟客-普通' }]);
+    expect(parsed.positions).toEqual([
+      { who: '熟客', slot: '右' },
+      { who: null, slot: '左' },
+    ]);
+    expect(parsed.portraitEffects).toEqual([
+      { who: null, name: '右滑入', seconds: 0.3 },
+      { who: '店長', name: '淡出', seconds: 1 },
+    ]);
+    expect(parsed.issues).toEqual([]);
+  });
+
+  it('劇本檢查也看立繪欄，寫錯列出工作表與 ID', () => {
+    const project = createEmptyProject('咖啡店');
+    const node = createNode({ text: { zh: '早安' }, portrait: '店長：', stage: { position: '上面' } });
+    node.source = { id: '7' } as NonNullable<typeof node.source>;
+    project.scenes = [createScene('開店', [node])];
+    expect(checkScript(project).map((i) => `${i.path}｜${i.message}`)).toEqual([
+      '開店 / ID 7｜立繪「店長：」冒號前寫角色、冒號後寫內容',
+      '開店 / ID 7｜位置「上面」只能寫左、中、右',
+    ]);
   });
 });

@@ -67,6 +67,14 @@ namespace StoryDemo.Tests {
         public bool BackgroundBlack, Narrative;
         public float Curtain, Eyes, Flash, CardHeight, PortraitDrop, Scroll, ShadeAlpha;
         public Vector2 Shake;
+        public List<StoryDialogueView.PortraitInfo> Portraits;
+
+        // 場上（不含正在退場）的角色
+        public StoryDialogueView.PortraitInfo? Actor(string who) {
+            foreach (var p in Portraits) if (p.Who == who && !p.Leaving) return p;
+            return null;
+        }
+        public int Cast => Portraits.Count(p => !p.Leaving);
     }
 
     public sealed class UiLog {
@@ -180,7 +188,7 @@ namespace StoryDemo.Tests {
 
         static LineSnapshot Snapshot(StoryDialogueView view, RectTransform root, RectTransform card, string text) {
             var shade = root.Find("Stage/Narrative Shade").GetComponent<Image>().color.a;
-            var pos = ((RectTransform)root.Find("Stage/Portrait")).anchoredPosition;
+            var portraits = view.Portraits;
             return new LineSnapshot {
                 Text = text,
                 Background = view.BackgroundSprite != null ? view.BackgroundSprite.name : null,
@@ -192,7 +200,8 @@ namespace StoryDemo.Tests {
                 Shake = view.Stage.anchoredPosition,
                 Narrative = shade > 0.01f,
                 ShadeAlpha = shade,
-                PortraitDrop = -StoryDialogueView.PortraitInset - pos.y,
+                Portraits = portraits,
+                PortraitDrop = portraits.Count == 0 ? 0 : portraits.Max(p => p.Drop),
                 CardHeight = card.rect.height,
                 Scroll = ((RectTransform)card.Find("Body/Content")).anchoredPosition.y,
             };
