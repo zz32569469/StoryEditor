@@ -199,34 +199,43 @@ export function NodeEditor() {
         </span>
         {node.choices.length === 0 && <p className="hint">沒有選項時，這一句會直接接到「下一句」。</p>}
         {node.choices.map((choice) => (
-          <div key={choice.id} className="choice-row">
-            <input
-              type="text"
-              value={choice.text[lang] ?? ''}
-              placeholder="例：「我不是來活下來的。」"
-              onChange={(e) => setChoiceText(node.id, choice.id, lang, e.target.value)}
-            />
-            <select
-              value={choice.targetNodeId ?? ''}
-              onChange={(e) =>
-                updateChoice(node.id, choice.id, { targetNodeId: e.target.value || null })
+          <div key={choice.id} className="choice-block">
+            <div className="choice-row">
+              <input
+                type="text"
+                value={choice.text[lang] ?? ''}
+                placeholder="例：「我不是來活下來的。」"
+                onChange={(e) => setChoiceText(node.id, choice.id, lang, e.target.value)}
+              />
+              <select
+                value={choice.targetNodeId ?? ''}
+                onChange={(e) =>
+                  updateChoice(node.id, choice.id, { targetNodeId: e.target.value || null })
+                }
+              >
+                <option value="">（結束對話）</option>
+                {otherNodes.map((n, i) => (
+                  <option key={n.id} value={n.id}>
+                    {nodeLabel(n, i)}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="danger"
+                title="刪除選項"
+                onClick={() => deleteChoice(node.id, choice.id)}
+              >
+                ✕
+              </button>
+            </div>
+            <ExpressionField
+              kind="unlock"
+              value={choice.condition ?? ''}
+              onChange={(next) =>
+                updateChoice(node.id, choice.id, { condition: next.trim() ? next : undefined })
               }
-            >
-              <option value="">（結束對話）</option>
-              {otherNodes.map((n, i) => (
-                <option key={n.id} value={n.id}>
-                  {nodeLabel(n, i)}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="danger"
-              title="刪除選項"
-              onClick={() => deleteChoice(node.id, choice.id)}
-            >
-              ✕
-            </button>
+            />
           </div>
         ))}
       </div>

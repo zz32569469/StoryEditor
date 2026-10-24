@@ -45,6 +45,8 @@ interface RawRow {
   portrait: string;
   content: string;
   jump: string;
+  /** 選項解鎖條件；只有 q 列會有值。 */
+  unlock: string;
   /** 標誌欄的原值，`` 與 `#` 都是台詞但要分辨才能原樣寫回。 */
   markerRaw: string;
   extras: Record<string, string>;
@@ -77,6 +79,7 @@ function readRows(sheet: Worksheet, headers: string[], warnings: string[]): RawR
     portrait: findColumn(headers, 'portrait'),
     content: findColumn(headers, 'content'),
     jump: findColumn(headers, 'jump'),
+    unlock: findColumn(headers, 'unlock'),
   };
 
   if (cols.id === 0 || cols.content === 0) {
@@ -113,9 +116,17 @@ function readRows(sheet: Worksheet, headers: string[], warnings: string[]): RawR
       if (value) extras[col.name] = value;
     }
 
+    const marker = toMarker(markerRaw);
+    let unlock = get(cols.unlock);
+    if (unlock && marker !== 'q') {
+      // 非選項列沒有地方放條件，原樣帶著走，匯出時才寫得回去。
+      extras[headers[cols.unlock - 1]!] = unlock;
+      unlock = '';
+    }
+
     rows.push({
       excelRow: r,
-      marker: toMarker(markerRaw),
+      marker,
       markerRaw,
       id,
       group: get(cols.group),
@@ -123,6 +134,7 @@ function readRows(sheet: Worksheet, headers: string[], warnings: string[]): RawR
       portrait: get(cols.portrait),
       content,
       jump: get(cols.jump),
+      unlock,
       extras,
     });
   }
@@ -248,6 +260,7 @@ function convertSheet(
         id: reuse.choice(sheetName, member.id),
         text: { zh: member.content },
         targetNodeId: resolveJump(member.jump, member),
+        condition: member.unlock || undefined,
         sourceId: member.id,
         sourceJump: member.jump,
         speaker: registerCharacter(member.person),

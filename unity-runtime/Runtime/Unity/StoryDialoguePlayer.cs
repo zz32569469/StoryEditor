@@ -35,7 +35,7 @@ namespace StoryRuntime.Unity {
         public event Action<string> OnError;
 
         public StoryProject Project { get; private set; }
-        public PlayerState State { get; private set; }
+        public StoryState State { get; private set; }
         public bool IsTyping => _schedule != null && _elapsed < _schedule.Total;
 
         IStoryVariables _variables;
@@ -108,7 +108,7 @@ namespace StoryRuntime.Unity {
 
             StartTyping(TextOf(node));
 
-            if (State.Status == PlayerStatus.Choices) OnChoices?.Invoke(node.Choices);
+            if (State.Status == PlayerStatus.Choices) OnChoices?.Invoke(AvailableChoicesOf(node));
             else if (State.Status == PlayerStatus.Input) OnInputRequested?.Invoke(State.PendingInputs);
             else OnLine?.Invoke(node);
         }
@@ -153,6 +153,15 @@ namespace StoryRuntime.Unity {
             _parsed = null;
             if (Label != null) Label.text = "";
             if (SpeakerLabel != null) SpeakerLabel.text = "";
+        }
+
+        // 解鎖條件不成立的選項不給 UI —— 判斷已經在 StoryPlayer 做完，這裡只照名單挑。
+        List<StoryChoice> AvailableChoicesOf(StoryNode node) {
+            var choices = new List<StoryChoice>();
+            foreach (StoryChoice choice in node.Choices) {
+                if (State.AvailableChoices.Contains(choice.Id)) choices.Add(choice);
+            }
+            return choices;
         }
 
         string TextOf(StoryNode node) {

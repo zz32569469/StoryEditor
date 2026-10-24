@@ -40,7 +40,7 @@ namespace StoryRuntime.Tests {
             }
 
             var snapshots = (JArray)item["snapshots"];
-            PlayerState state = StoryPlayer.StartScene(project, (string)item["sceneId"], variables);
+            StoryState state = StoryPlayer.StartScene(project, (string)item["sceneId"], variables);
             AssertSnapshot(snapshots[0], state, variables, name, 0);
 
             var steps = (JArray)item["steps"];
@@ -79,7 +79,7 @@ namespace StoryRuntime.Tests {
         }
 
         static void AssertSnapshot(
-            JToken expected, PlayerState state, DictionaryVariables variables, string name, int step) {
+            JToken expected, StoryState state, DictionaryVariables variables, string name, int step) {
 
             string where = $"「{name}」第 {step} 步";
 
@@ -92,6 +92,7 @@ namespace StoryRuntime.Tests {
 
             Assert.Equal(expected["visited"].ToObject<List<string>>(), state.Visited);
             Assert.Equal(expected["pendingInputs"].ToObject<List<string>>(), state.PendingInputs);
+            Assert.Equal(expected["availableChoices"].ToObject<List<string>>(), state.AvailableChoices);
 
             var expectedVars = (JObject)expected["variables"];
             foreach (var pair in expectedVars) {

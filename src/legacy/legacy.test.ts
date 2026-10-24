@@ -386,3 +386,47 @@ describe('匯出既有劇本格式', () => {
     expect(new Set(rows.map((r) => r['ID'])).size).toBe(rows.length);
   });
 });
+
+describe('選項解鎖條件', () => {
+  const unlockSheet = (column: string): Record<string, Row[]> => ({
+    'MQ-0': [
+      { 標誌: '#', ID: '0', 人物: 'guide', 內容: '要說什麼？', 跳轉: '1', [column]: '只是備註' },
+      { 標誌: 'q', ID: '1', 組: 'a', 人物: 'player', 內容: '打招呼', 跳轉: '3' },
+      { 標誌: 'q', ID: '2', 組: 'a', 人物: 'player', 內容: '告白', 跳轉: '3', [column]: 'affection >= 30' },
+      { 標誌: 'end', ID: '3' },
+    ],
+  });
+
+  // 兩種欄名都在實際劇本裡出現過；只認一種的話，另一批工作表的條件會靜默失效。
+  for (const column of ['選項解鎖', '選項解鎖條件']) {
+    it(`「${column}」欄匯入成選項的條件`, async () => {
+      const headers = [...HEADERS.slice(0, -1), column, '跳轉'];
+      const { project } = await importLegacyWorkbook(await makeWorkbook(unlockSheet(column), headers), '測試');
+      const choices = project.scenes[0]!.nodes.find((n) => n.choices.length > 0)!.choices;
+
+      expect(choices.map((c) => c.condition)).toEqual([undefined, 'affection >= 30']);
+      expect(choices[1]!.extras[column]).toBeUndefined();
+      // 條件裡的變數要被宣告出來，編輯器與播放器才認得。
+      expect(project.variables.map((v) => v.id)).toContain('affection');
+    });
+
+    it(`「${column}」欄往返後原樣寫回，非選項列的值也不會消失`, async () => {
+      const headers = [...HEADERS.slice(0, -1), column, '跳轉'];
+      const source = await makeWorkbook(unlockSheet(column), headers);
+      const { project } = await importLegacyWorkbook(source, '測試');
+
+      const result = await readWorkbook(await (await exportLegacyWorkbook(project)).blob.arrayBuffer());
+      expect(result).toEqual(await readWorkbook(source));
+    });
+  }
+
+  it('表裡沒有解鎖欄、卻在編輯器加了條件時，匯出會補上這一欄', async () => {
+    const { project } = await importLegacyWorkbook(await makeWorkbook(SAMPLE), '測試');
+    const choicePoint = project.scenes[0]!.nodes.find((n) => n.choices.length > 0)!;
+    choicePoint.choices[1]!.condition = 'courage > 1';
+
+    const result = await readWorkbook(await (await exportLegacyWorkbook(project)).blob.arrayBuffer());
+    const row = result['CH-0-序章']!.find((r) => r['ID'] === '2')!;
+    expect(row['選項解鎖']).toBe('courage > 1');
+  });
+});

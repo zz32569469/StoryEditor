@@ -10,16 +10,18 @@ import { parseAssignment, parseExpression, parseInputTargets } from '../expr/par
  * 肉眼看不出來，等到播放時才報錯離出錯的操作太遠。
  */
 
-export type ExpressionKind = 'condition' | 'assignment' | 'input';
+export type ExpressionKind = 'condition' | 'unlock' | 'assignment' | 'input';
 
 const PLACEHOLDER: Record<ExpressionKind, string> = {
   condition: '例：courage >= 95',
+  unlock: '解鎖條件（留空 = 一直顯示），例：affection >= 30',
   assignment: '例：level = Max(age, 25)',
   input: '例：lastName, firstName',
 };
 
 const HINT: Record<ExpressionKind, string> = {
   condition: '成立時跳往右邊指定的節點。可用 > >= < <= == != && || !',
+  unlock: '不成立時玩家看不到這個選項。可用 > >= < <= == != && || !',
   assignment: '把右邊算出來的值存進左邊的變數。可用 + - * / %，字串用 + 串接',
   input: '要接收玩家輸入的變數名，多個用逗號分隔',
 };
@@ -27,7 +29,7 @@ const HINT: Record<ExpressionKind, string> = {
 function validate(kind: ExpressionKind, value: string): string | null {
   if (!value.trim()) return null; // 空白讓使用者慢慢打，不要一開始就紅
   const result =
-    kind === 'condition'
+    kind === 'condition' || kind === 'unlock'
       ? parseExpression(value)
       : kind === 'assignment'
         ? parseAssignment(value)

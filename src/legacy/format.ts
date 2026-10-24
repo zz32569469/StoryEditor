@@ -43,6 +43,13 @@ export const COLUMN_ALIASES = {
   portrait: ['立繪'],
   content: ['內容'],
   jump: ['跳轉'],
+  /**
+   * 選項要成立才出現的條件，只對 q 列有意義。
+   *
+   * 兩種欄名都在用（MQ-0、MQ-1 等用短的，其餘用長的）。只認其中一個的話，
+   * 另一批工作表填的條件會被當成製作欄位帶著走，播放時卻完全不生效。
+   */
+  unlock: ['選項解鎖', '選項解鎖條件'],
 } as const;
 
 export type SemanticColumn = keyof typeof COLUMN_ALIASES;

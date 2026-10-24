@@ -375,6 +375,9 @@ export const useEditor = create<EditorState>()(
                 node.text[lang] = renamePlaceholder(node.text[lang]!, variableId, nextId);
               }
               for (const choice of node.choices) {
+                if (choice.condition) {
+                  choice.condition = renameIdentifier(choice.condition, variableId, nextId);
+                }
                 for (const lang of Object.keys(choice.text)) {
                   choice.text[lang] = renamePlaceholder(choice.text[lang]!, variableId, nextId);
                 }

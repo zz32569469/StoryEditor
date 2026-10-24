@@ -121,6 +121,11 @@ function collectStatements(project: StoryProject): Statement[] {
         const parsed = parseExpression(branch.condition);
         if (parsed.ok) statements.push({ expr: parsed.value });
       }
+      for (const choice of node.choices) {
+        if (!choice.condition) continue;
+        const parsed = parseExpression(choice.condition);
+        if (parsed.ok) statements.push({ expr: parsed.value });
+      }
       if (node.kind === 'set') {
         const parsed = parseAssignment(node.expression ?? '');
         if (parsed.ok) statements.push({ target: parsed.value.target, expr: parsed.value.value });
