@@ -41,7 +41,8 @@ namespace StoryRuntime.UI {
 
         void Open();
         void Close();
-        void ShowLine(string speaker, string markup, TypewriterSchedule schedule);
+        // motion：每個字的 [shake]／[wave]（TextMotion.Build），全句都沒有時是 null
+        void ShowLine(string speaker, string markup, TypewriterSchedule schedule, MotionTag[][] motion);
         void RevealAll();
         void ShowChoices(IReadOnlyList<StoryChoiceItem> choices);
         void ShowInput(IReadOnlyList<StoryInputItem> fields);

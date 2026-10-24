@@ -100,6 +100,19 @@ namespace StoryDemo.Tests {
             Assert.That(Early("傍晚").Curtain, Is.InRange(0.01f, 0.99f), "淡入進行中");
             Assert.That(Early("（明天會是").Eyes, Is.LessThan(0.99f), "閉眼進行中");
 
+            // 逐字動畫：「[wave]味道不錯[/wave]，就是[shake]奶泡[/shake]太厚了。」
+            var early = Early("味道不錯");
+            var settled = Settled("味道不錯");
+            for (int i = 0; i < 4; i += 1) {
+                Assert.AreNotEqual(early.Motion[i].y, settled.Motion[i].y, $"wave 第 {i} 個字隨時間上下");
+                Assert.AreEqual(0, settled.Motion[i].x, 1e-3f, "wave 只動上下");
+            }
+            Assert.AreNotEqual(settled.Motion[0].y, settled.Motion[1].y, "wave 每個字錯開");
+            Assert.Greater(Mathf.Max(settled.Motion[7].magnitude, settled.Motion[8].magnitude), 0, "shake 有位移");
+            foreach (int i in new[] { 4, 5, 6, 9, 10, 11 }) Assert.AreEqual(Vector2.zero, settled.Motion[i], $"第 {i} 個字沒有效果");
+            for (int i = 0; i < settled.Motion.Count; i += 1)
+                Assert.AreEqual(0, (settled.VertexShift[i] - settled.Motion[i]).magnitude, 0.01f, $"第 {i} 個字的頂點真的移了那麼多");
+
             // 立繪：左中右站位、進退場、同時多人
             float slot = StoryDialogueView.SlotOffset;
             var manager = Settled("早安").Actor("店長").Value;

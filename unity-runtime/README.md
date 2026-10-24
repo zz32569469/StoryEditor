@@ -66,6 +66,8 @@ controller.FeaturesUnlocked  += keys => ...;
 - 立繪可以左／中／右同時多人，進退場有淡入淡出與左右滑入滑出；沒寫位置的角色站 `controller.defaultPortraitSlot`（預設「右」），
   站到有人的格子會把原本那位換下，所以沒寫位置的劇本看起來跟單人立繪一樣。
 - 讀檔（`ResumeAt`）時，往回找存檔那一句之前最後的背景、插圖、BGM 與立繪站位直接放上去；那一句的屬性變化不會重複套用。
+- 台詞裡的 `[shake]`／`[wave]` 用逐頂點動畫做（`TextMotion` 算位移，振幅與頻率照網頁預覽的 CSS）；
+  shake 每個字錯開一格，比網頁的整段同步抖更像「逐字抖動」。
 - 鍵盤（Space／Enter 前進、Esc 關 AUTO）只接舊版 Input Manager；只開新版 Input System 的專案要自己把按鍵接上。
 
 ## 示範專案
@@ -211,7 +213,6 @@ cd tools/csharp/StoryRuntime.Tests && dotnet test
 
 ## 還沒做的
 
-- `shake`／`wave` 的逐頂點動畫
 - 閱讀輔助：對話紀錄、快轉讀過的句子、隱藏對話框、文字速度設定
 
 ## 已知的落差

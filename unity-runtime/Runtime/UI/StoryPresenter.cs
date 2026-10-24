@@ -270,7 +270,7 @@ namespace StoryRuntime.UI {
             _parsed = parsed;
             _revealedChars = 0;
             _lineChars = parsed.Chars.Count;
-            _view.ShowLine(_speakers.DisplayName(label), _markup.Render(parsed), Schedule(parsed));
+            _view.ShowLine(_speakers.DisplayName(label), _markup.Render(parsed), Schedule(parsed), TextMotion.Build(parsed));
             _view.ShowChoices(State.Status == PlayerStatus.Choices ? ChoicesOf(node) : _noChoices);
         }
 
