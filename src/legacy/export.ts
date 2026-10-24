@@ -1,5 +1,6 @@
-import type { StoryNode, StoryProject } from '../schema/story';
-import { COLUMN_ALIASES, DEFAULT_COLUMNS, findColumn, markerFor } from './format';
+import type { Stage, StageField, StoryNode, StoryProject } from '../schema/story';
+import { writeAttributeSheet } from './attributeSheet';
+import { COLUMN_ALIASES, DEFAULT_COLUMNS, STAGE_COLUMNS, STAGE_FIELDS, findColumn, markerFor } from './format';
 
 /**
  * 把專案以**來源劇本的格式**匯出。
@@ -79,6 +80,15 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
   for (const scene of project.scenes) {
     const headers = [...(scene.sourceColumns?.length ? scene.sourceColumns : DEFAULT_COLUMNS)];
     const unlockColumn = ensureUnlockColumn(headers, scene.nodes);
+    const stageColumn = ensureStageColumns(headers, scene.nodes);
+    const stageCells = (stage: Stage | undefined): OutRow => {
+      const cells: OutRow = {};
+      for (const field of STAGE_FIELDS) {
+        const value = stage?.[field];
+        if (value) cells[stageColumn[field]!] = value;
+      }
+      return cells;
+    };
     const alloc = makeIdAllocator(existingIds(scene.nodes));
 
     // 先決定每個節點與每個選項／分支的編號，跳轉才有對象可指。
@@ -144,6 +154,7 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
             內容: choice.text[base] ?? '',
             跳轉: jumpTo(choice.targetNodeId, choice.sourceJump),
             ...(unlockColumn ? { [unlockColumn]: choice.condition ?? '' } : {}),
+            ...stageCells(choice.stage),
           });
         }
         continue;
@@ -159,6 +170,7 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
             人物: labelOf(branch.speaker) ?? speaker,
             內容: branch.condition,
             跳轉: jumpTo(branch.targetNodeId, branch.sourceJump),
+            ...stageCells(branch.stage),
           });
         }
         continue;
@@ -173,6 +185,7 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
         立繪: node.portrait ?? '',
         內容: node.kind === 'line' ? (node.text[base] ?? '') : (node.expression ?? ''),
         跳轉: node.kind === 'end' ? '' : jumpTo(node.next, node.sourceJump),
+        ...stageCells(node.stage),
       });
     }
 
@@ -190,6 +203,8 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
 
     totalRows += out.length;
   }
+
+  writeAttributeSheet(workbook, project.variables);
 
   const buffer = await workbook.xlsx.writeBuffer();
   return {
@@ -219,6 +234,34 @@ function ensureUnlockColumn(headers: string[], nodes: StoryNode[]): string | nul
   if (jump > 0) headers.splice(jump - 1, 0, name);
   else headers.push(name);
   return name;
+}
+
+/**
+ * 每個演出欄位寫進哪一欄：沿用這張表原本的欄名（「背景」或舊稱「場景」）；
+ * 表裡沒有那一欄、卻有內容要寫時補一欄（插在跳轉前），否則那些演出匯出時會整欄消失。
+ */
+function ensureStageColumns(headers: string[], nodes: StoryNode[]): Partial<Record<StageField, string>> {
+  const stages: (Stage | undefined)[] = [];
+  for (const node of nodes) {
+    stages.push(node.stage);
+    for (const choice of node.choices) stages.push(choice.stage);
+    for (const branch of node.branches) stages.push(branch.stage);
+  }
+  const columns: Partial<Record<StageField, string>> = {};
+  for (const field of STAGE_FIELDS) {
+    const existing = STAGE_COLUMNS[field].find((name) => headers.includes(name));
+    if (existing) {
+      columns[field] = existing;
+      continue;
+    }
+    if (!stages.some((stage) => stage?.[field])) continue;
+    const name = STAGE_COLUMNS[field][0]!;
+    const jump = findColumn(headers, 'jump');
+    if (jump > 0) headers.splice(jump - 1, 0, name);
+    else headers.push(name);
+    columns[field] = name;
+  }
+  return columns;
 }
 
 function columnWidth(header: string): number {

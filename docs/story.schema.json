@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://storyeditor.local/story-1.4.0.schema.json",
-  "title": "StoryProject 1.4.0",
+  "$id": "https://storyeditor.local/story-1.5.0.schema.json",
+  "title": "StoryProject 1.5.0",
   "type": "object",
   "properties": {
     "meta": {
@@ -316,6 +316,45 @@
                         "type": "string",
                         "pattern": "^[a-z0-9][a-z0-9_-]*$"
                       },
+                      "stage": {
+                        "type": "object",
+                        "properties": {
+                          "background": {
+                            "type": "string"
+                          },
+                          "position": {
+                            "type": "string"
+                          },
+                          "portraitEffect": {
+                            "type": "string"
+                          },
+                          "cg": {
+                            "type": "string"
+                          },
+                          "screenEffect": {
+                            "type": "string"
+                          },
+                          "sfx": {
+                            "type": "string"
+                          },
+                          "bgm": {
+                            "type": "string"
+                          },
+                          "attributes": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "string"
+                          },
+                          "unlocks": {
+                            "type": "string"
+                          },
+                          "target": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
+                      },
                       "extras": {
                         "default": {},
                         "type": "object",
@@ -401,6 +440,45 @@
                 "expression": {
                   "type": "string"
                 },
+                "stage": {
+                  "type": "object",
+                  "properties": {
+                    "background": {
+                      "type": "string"
+                    },
+                    "position": {
+                      "type": "string"
+                    },
+                    "portraitEffect": {
+                      "type": "string"
+                    },
+                    "cg": {
+                      "type": "string"
+                    },
+                    "screenEffect": {
+                      "type": "string"
+                    },
+                    "sfx": {
+                      "type": "string"
+                    },
+                    "bgm": {
+                      "type": "string"
+                    },
+                    "attributes": {
+                      "type": "string"
+                    },
+                    "items": {
+                      "type": "string"
+                    },
+                    "unlocks": {
+                      "type": "string"
+                    },
+                    "target": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": false
+                },
                 "branches": {
                   "default": [],
                   "type": "array",
@@ -435,6 +513,45 @@
                       "speaker": {
                         "type": "string",
                         "pattern": "^[a-z0-9][a-z0-9_-]*$"
+                      },
+                      "stage": {
+                        "type": "object",
+                        "properties": {
+                          "background": {
+                            "type": "string"
+                          },
+                          "position": {
+                            "type": "string"
+                          },
+                          "portraitEffect": {
+                            "type": "string"
+                          },
+                          "cg": {
+                            "type": "string"
+                          },
+                          "screenEffect": {
+                            "type": "string"
+                          },
+                          "sfx": {
+                            "type": "string"
+                          },
+                          "bgm": {
+                            "type": "string"
+                          },
+                          "attributes": {
+                            "type": "string"
+                          },
+                          "items": {
+                            "type": "string"
+                          },
+                          "unlocks": {
+                            "type": "string"
+                          },
+                          "target": {
+                            "type": "string"
+                          }
+                        },
+                        "additionalProperties": false
                       },
                       "extras": {
                         "default": {},

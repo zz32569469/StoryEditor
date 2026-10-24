@@ -79,6 +79,20 @@ namespace StoryRuntime.UI {
         string _lastPortrait;
         string _portraitOwner;   // 立繪屬於哪個角色：設定那張立繪的那一句的說話者
         int _lineChars;
+        ParsedText _parsed;
+        int _revealedChars;
+
+        // 演出資產（docs/FORMAT.md §3.5）。沒給的那一類演出會跳過並記 warning
+        public StorySpriteTable Backgrounds { get; set; }
+        public StorySpriteTable Cgs { get; set; }
+        public IStoryAudio Audio { get; set; }
+
+        // 交給遊戲的事件：屬性變化（runtime 已依屬性清單套用到變數）、物品消耗、功能解鎖、
+        // 舊寫法的輸入提示（畫面效果欄的 OpenNameInput 之類，Key 為 Name／Birthday／Level）
+        public event Action<IReadOnlyList<AttributeEffect>> OnEffects;
+        public event Action<IReadOnlyList<ItemChange>, string> OnItems;
+        public event Action<IReadOnlyList<string>> OnUnlocks;
+        public event Action<string> OnInputHint;
 
         public StoryState State { get; private set; }
         public bool IsFinished => State == null || State.Status == PlayerStatus.Ended || State.Status == PlayerStatus.Error;
@@ -103,6 +117,7 @@ namespace StoryRuntime.UI {
             _view.OnAutoClick    += HandleAutoClick;
             _view.OnLineShown    += HandleLineShown;
             _view.OnAutoElapsed  += HandleAutoElapsed;
+            _view.OnReveal       += HandleReveal;
         }
 
         public void Dispose() {
@@ -112,6 +127,7 @@ namespace StoryRuntime.UI {
             _view.OnAutoClick    -= HandleAutoClick;
             _view.OnLineShown    -= HandleLineShown;
             _view.OnAutoElapsed  -= HandleAutoElapsed;
+            _view.OnReveal       -= HandleReveal;
         }
 
         // ── 開始 ─────────────────────────────────────────────
@@ -125,8 +141,9 @@ namespace StoryRuntime.UI {
         public void Resume(string sceneId, string nodeId) {
             BeginDialogue();
             State = StoryPlayer.ResumeAt(_project, sceneId, nodeId, _variables, _options);
-            // 讀檔回到的那一句不一定有立繪，往回找最近一張，不然畫面會空著直到下一次換圖
+            // 讀檔回到的那一句不一定有立繪、背景，往回找最近一次的設定，不然畫面會空著直到下一次換圖
             RestorePortrait(sceneId, nodeId);
+            RestoreStage(sceneId, nodeId);
             Present();
         }
 
@@ -192,6 +209,17 @@ namespace StoryRuntime.UI {
             if (Auto && IsPlaying && State.Status == PlayerStatus.Line) _view.StartAutoTimer(AutoDelay(_lineChars));
         }
 
+        // 台詞內的 [sfx=代號]：逐字顯示到那個字時播放
+        void HandleReveal(int visible) {
+            if (_parsed == null) return;
+            for (int i = _revealedChars; i < visible && i < _parsed.Chars.Count; i += 1) {
+                foreach (ResolvedTag tag in _parsed.Chars[i].Before) {
+                    if (tag.Name == "sfx" && tag.Params.TryGetValue("value", out TagParamValue key)) Audio?.PlaySfx(key.ToDisplayString());
+                }
+            }
+            if (visible > _revealedChars) _revealedChars = visible;
+        }
+
         void HandleAutoElapsed() {
             if (!Auto || !IsPlaying || State.Status != PlayerStatus.Line || _view.IsTyping) return;
             Next();
@@ -206,6 +234,7 @@ namespace StoryRuntime.UI {
 
         void Present() {
             _view.CancelAutoTimer();
+            if (State.Status != PlayerStatus.Error) ApplyCues();
 
             if (State.Status == PlayerStatus.Error) {
                 Debug.LogError($"[StoryPresenter] 劇情「{SceneNameOf(State.SceneId)}」出錯：{State.Error}");
@@ -233,9 +262,72 @@ namespace StoryRuntime.UI {
 
             _view.ShowInput(_noInputs);
             var parsed = Render(TextOf(node.Text));
+            _parsed = parsed;
+            _revealedChars = 0;
             _lineChars = parsed.Chars.Count;
             _view.ShowLine(_speakers.DisplayName(label), _markup.Render(parsed), Schedule(parsed));
             _view.ShowChoices(State.Status == PlayerStatus.Choices ? ChoicesOf(node) : _noChoices);
+        }
+
+        // ── 演出 ─────────────────────────────────────────────
+
+        // 依播放器回報的順序執行這一步經過的演出。同一列裡先換背景與插圖（有「溶接」就交叉淡化），
+        // 再播畫面效果 —— 「睜眼」配新背景時，眼睛張開看到的才是新背景
+        void ApplyCues() {
+            if (State.Effects.Count > 0) OnEffects?.Invoke(State.Effects);
+            foreach (StoryCue cue in State.Cues) {
+                ParsedStage parsed = StageParser.Parse(cue.Stage);
+                float dissolve = 0;
+                foreach (ScreenCommand command in parsed.Screen) {
+                    if (command.Name == "溶接") dissolve = (float)command.Args[0];
+                }
+
+                if (parsed.Background != null) {
+                    ApplyImage(parsed.Background.Key, Backgrounds, "背景", sprite => _view.SetBackground(sprite, dissolve));
+                }
+                if (parsed.Cg != null) ApplyImage(parsed.Cg.Key, Cgs, "插圖", sprite => _view.SetCg(sprite, dissolve));
+
+                foreach (ScreenCommand command in parsed.Screen) {
+                    if (command.Name == "溶接") continue;
+                    if (command.Name == "input") { OnInputHint?.Invoke(command.Key); continue; }
+                    _view.PlayScreenEffect(command);
+                }
+
+                foreach (string key in parsed.Sfx) Audio?.PlaySfx(key);
+                if (parsed.Bgm != null) {
+                    if (parsed.Bgm.Key == null) Audio?.StopBgm((float)parsed.Bgm.Fade);
+                    else Audio?.PlayBgm(parsed.Bgm.Key, (float)parsed.Bgm.Fade);
+                }
+                if (parsed.Items.Count > 0) OnItems?.Invoke(parsed.Items, parsed.Target);
+                if (parsed.Unlocks.Count > 0) OnUnlocks?.Invoke(parsed.Unlocks);
+            }
+        }
+
+        // key 為 null 是「無」：背景換全黑、插圖收起。對應表裡沒有的代號（含只寫「插圖」的佔位）跳過並記 warning
+        static void ApplyImage(string key, StorySpriteTable table, string column, Action<Sprite> apply) {
+            if (key == null) { apply(null); return; }
+            if (table != null && table.TryGet(key, out Sprite sprite)) { apply(sprite); return; }
+            Debug.LogWarning($"[StoryPresenter] {column}對應表裡沒有「{key}」，略過");
+        }
+
+        // 讀檔：照場景裡的排列，往回找存檔那一句之前最後的背景、插圖與 BGM，不帶轉場直接放上去。
+        // 只看一般節點的演出 —— 分支與選項上的設定要看當時走了哪條路，存檔沒有記
+        void RestoreStage(string sceneId, string nodeId) {
+            var scene = _project.FindScene(sceneId);
+            if (scene == null) return;
+            KeyCommand background = null, cg = null;
+            BgmCommand bgm = null;
+            foreach (var node in scene.Nodes) {
+                if (node.Id == nodeId) break;
+                if (node.Stage == null) continue;
+                ParsedStage parsed = StageParser.Parse(node.Stage);
+                if (parsed.Background != null) background = parsed.Background;
+                if (parsed.Cg != null) cg = parsed.Cg;
+                if (parsed.Bgm != null) bgm = parsed.Bgm;
+            }
+            if (background != null) ApplyImage(background.Key, Backgrounds, "背景", sprite => _view.SetBackground(sprite, 0));
+            if (cg != null) ApplyImage(cg.Key, Cgs, "插圖", sprite => _view.SetCg(sprite, 0));
+            if (bgm?.Key != null) Audio?.PlayBgm(bgm.Key, 0);
         }
 
         void Finish() {

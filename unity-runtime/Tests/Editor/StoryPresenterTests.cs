@@ -256,6 +256,138 @@ namespace StoryRuntime.UI.Tests {
             p.Dispose();
         }
 
+        // ── 演出 ─────────────────────────────────────────────
+
+        const string StageJson = @"{
+            ""meta"": { ""formatVersion"": ""1.5.0"", ""languages"": [""zh""], ""baseLanguage"": ""zh"" },
+            ""tagRegistry"": [{ ""name"": ""sfx"", ""kind"": ""inline"", ""positional"": ""value"", ""params"": [{ ""name"": ""value"", ""type"": ""string"" }] }],
+            ""variables"": [{ ""id"": ""trust"", ""type"": ""number"", ""default"": 0, ""label"": ""信任"" }],
+            ""characters"": [{ ""id"": ""manager"", ""name"": { ""zh"": ""店長"" } }],
+            ""scenes"": [{
+                ""id"": ""s"", ""name"": ""開店"", ""entryNodeId"": ""a"",
+                ""nodes"": [
+                    { ""id"": ""a"", ""speaker"": ""manager"", ""text"": { ""zh"": ""早[sfx=杯子]安。"" }, ""next"": ""b"",
+                      ""stage"": { ""background"": ""店內"", ""screenEffect"": ""睜眼效果，溶接 0.8"", ""bgm"": ""早晨 2"", ""sfx"": ""門鈴"" } },
+                    { ""id"": ""b"", ""kind"": ""set"", ""expression"": ""x = 1"", ""next"": ""c"",
+                      ""stage"": { ""cg"": ""cg-試喝"", ""attributes"": ""信任+1"", ""items"": ""紙杯×2"", ""unlocks"": ""咖啡機"", ""target"": ""新人"" } },
+                    { ""id"": ""c"", ""speaker"": ""manager"", ""text"": { ""zh"": ""好喝。"" }, ""next"": ""d"",
+                      ""stage"": { ""cg"": ""無"", ""background"": ""無"", ""screenEffect"": ""震動 0.2 2，閃白，OpenNameInput，轉圈"" } },
+                    { ""id"": ""d"", ""speaker"": ""manager"", ""text"": { ""zh"": ""插圖還沒畫。"" }, ""next"": ""z"",
+                      ""stage"": { ""cg"": ""插圖"", ""bgm"": ""停止 1"" } },
+                    { ""id"": ""z"", ""kind"": ""end"" }
+                ]
+            }]
+        }";
+
+        sealed class FakeAudio : IStoryAudio {
+            public readonly List<string> Log = new List<string>();
+            public void PlaySfx(string key) => Log.Add($"sfx:{key}");
+            public void PlayBgm(string key, float fade) => Log.Add($"bgm:{key}:{fade}");
+            public void StopBgm(float fade) => Log.Add($"stop:{fade}");
+        }
+
+        StorySpriteTable Images(params string[] keys) {
+            var table = ScriptableObject.CreateInstance<StorySpriteTable>();
+            _objects.Add(table);
+            foreach (var key in keys) {
+                var tex = new Texture2D(2, 2);
+                var sprite = Sprite.Create(tex, new UnityEngine.Rect(0, 0, 2, 2), Vector2.one * 0.5f);
+                sprite.name = key;
+                _objects.Add(tex); _objects.Add(sprite);
+                table.entries.Add(new StorySpriteTable.Entry { key = key, sprite = sprite });
+            }
+            return table;
+        }
+
+        (StoryPresenter presenter, FakeAudio audio, InMemoryStoryVariables vars) StartStage() {
+            var project = StoryLoader.FromJson(StageJson);
+            var vars = new InMemoryStoryVariables();
+            StoryPlayer.SeedDefaults(project, vars);
+            var audio = new FakeAudio();
+            var presenter = new StoryPresenter(_view, project, vars, _table) {
+                Backgrounds = Images("店內"),
+                Cgs = Images("cg-試喝"),
+                Audio = audio,
+            };
+            presenter.Start("s");
+            return (presenter, audio, vars);
+        }
+
+        [Test]
+        public void Stage_BackgroundBeforeScreenEffectsAndDissolveIsTheCrossfade() {
+            var (p, audio, _) = StartStage();
+            CollectionAssert.AreEqual(new[] { "背景:店內:0.8", "睜眼:1.2" }, _view.Stage,
+                "同一列先換背景（溶接 0.8 秒），再播睜眼；溶接本身不是畫面效果");
+            CollectionAssert.AreEqual(new[] { "sfx:門鈴", "bgm:早晨:2" }, audio.Log);
+            p.Dispose();
+        }
+
+        [Test]
+        public void Stage_InlineSfxPlaysWhenTypingReachesThatChar() {
+            var (p, audio, _) = StartStage();
+            audio.Log.Clear();
+            _view.Reveal(1);
+            Assert.IsEmpty(audio.Log, "[sfx=杯子] 掛在第 2 個字前面");
+            _view.Reveal(2);
+            CollectionAssert.AreEqual(new[] { "sfx:杯子" }, audio.Log);
+            _view.Reveal(3);
+            Assert.AreEqual(1, audio.Log.Count, "同一個標記只播一次");
+            p.Dispose();
+        }
+
+        [Test]
+        public void Stage_ControlRowCuesAndGameEventsComeWithTheNextLine() {
+            var (p, _, vars) = StartStage();
+            var effects = new List<AttributeEffect>();
+            var items = new List<string>();
+            var unlocks = new List<string>();
+            var hints = new List<string>();
+            p.OnEffects += list => effects.AddRange(list);
+            p.OnItems += (list, target) => items.AddRange(list.Select(i => $"{i.Key}×{i.Count}@{target}"));
+            p.OnUnlocks += list => unlocks.AddRange(list);
+            p.OnInputHint += hints.Add;
+            _view.Stage.Clear();
+
+            _view.Advance();
+
+            CollectionAssert.AreEqual(new[] { "插圖:cg-試喝:0", "背景:黑:0", "插圖:收:0", "震動:0.2/2", "閃白:0.2" }, _view.Stage,
+                "set 列上的插圖與下一句的演出都在這一步依序執行；寫錯的「轉圈」在解析時就被擋下");
+            Assert.AreEqual(1, effects.Count);
+            Assert.AreEqual("trust", effects[0].Variable);
+            Assert.IsTrue(vars.TryGet("trust", out var trust));
+            Assert.AreEqual(1, trust.AsNumber);
+            CollectionAssert.AreEqual(new[] { "紙杯×2@新人" }, items);
+            CollectionAssert.AreEqual(new[] { "咖啡機" }, unlocks);
+            CollectionAssert.AreEqual(new[] { "Name" }, hints, "舊寫法 OpenNameInput 交給遊戲");
+            p.Dispose();
+        }
+
+        [Test]
+        public void Stage_UnknownImageKeyIsSkippedWithWarning() {
+            var (p, audio, _) = StartStage();
+            _view.Advance();
+            _view.Stage.Clear();
+            LogAssert.Expect(LogType.Warning, new Regex("插圖對應表裡沒有「插圖」"));
+            _view.Advance();
+            Assert.IsEmpty(_view.Stage, "只寫「插圖」的佔位：跳過，不清掉目前的畫面");
+            CollectionAssert.Contains(audio.Log, "stop:1");
+            p.Dispose();
+        }
+
+        [Test]
+        public void Stage_ResumeRestoresLastBackgroundAndBgmWithoutTransition() {
+            var project = StoryLoader.FromJson(StageJson);
+            var audio = new FakeAudio();
+            var p = new StoryPresenter(_view, project, new InMemoryStoryVariables(), _table) {
+                Backgrounds = Images("店內"), Cgs = Images("cg-試喝"), Audio = audio,
+            };
+            p.Resume("s", "c");
+            Assert.AreEqual("背景:店內:0", _view.Stage[0], "存檔那句之前最後的背景，直接放上去");
+            Assert.AreEqual("插圖:cg-試喝:0", _view.Stage[1]);
+            Assert.AreEqual("bgm:早晨:0", audio.Log[0]);
+            p.Dispose();
+        }
+
         // ── 假畫面 ───────────────────────────────────────────
 
         sealed class FakeView : IStoryDialogueView {
@@ -265,6 +397,13 @@ namespace StoryRuntime.UI.Tests {
             public event Action OnAutoClick;
             public event Action OnLineShown;
             public event Action OnAutoElapsed;
+            public event Action<int> OnReveal;
+
+            public readonly List<string> Stage = new List<string>();
+            public void SetBackground(Sprite sprite, float fade) => Stage.Add($"背景:{(sprite == null ? "黑" : sprite.name)}:{fade}");
+            public void SetCg(Sprite sprite, float fade) => Stage.Add($"插圖:{(sprite == null ? "收" : sprite.name)}:{fade}");
+            public void PlayScreenEffect(ScreenCommand command) => Stage.Add($"{command.Name}:{string.Join("/", command.Args)}");
+            public void Reveal(int visible) => OnReveal?.Invoke(visible);
 
             public bool IsTyping { get; set; }
             public bool IsOpen, Auto, Narrative, Speaking;

@@ -84,6 +84,7 @@ namespace StoryRuntime.Story {
         [JsonProperty("notes")] public string Notes;
         [JsonProperty("expression")] public string Expression;
         [JsonProperty("branches")] public List<StoryBranch> Branches = new List<StoryBranch>();
+        [JsonProperty("stage")] public StoryStage Stage;
         [JsonProperty("extras")] public Dictionary<string, string> Extras = new Dictionary<string, string>();
     }
 
@@ -93,6 +94,8 @@ namespace StoryRuntime.Story {
         [JsonProperty("targetNodeId")] public string TargetNodeId;
         [JsonProperty("condition")] public string Condition;
         [JsonProperty("speaker")] public string Speaker;
+        // 選了這個選項時生效的演出（例如屬性變化）
+        [JsonProperty("stage")] public StoryStage Stage;
     }
 
     public sealed class StoryBranch {
@@ -100,6 +103,29 @@ namespace StoryRuntime.Story {
         [JsonProperty("condition")] public string Condition;
         [JsonProperty("targetNodeId")] public string TargetNodeId;
         [JsonProperty("speaker")] public string Speaker;
+        // 走了這條分支時生效的演出
+        [JsonProperty("stage")] public StoryStage Stage;
+    }
+
+    // 演出欄位的原文（格式見 docs/FORMAT.md §3.5），由 StageParser 解析
+    public sealed class StoryStage {
+        [JsonProperty("background")] public string Background;
+        [JsonProperty("position")] public string Position;
+        [JsonProperty("portraitEffect")] public string PortraitEffect;
+        [JsonProperty("cg")] public string Cg;
+        [JsonProperty("screenEffect")] public string ScreenEffect;
+        [JsonProperty("sfx")] public string Sfx;
+        [JsonProperty("bgm")] public string Bgm;
+        [JsonProperty("attributes")] public string Attributes;
+        [JsonProperty("items")] public string Items;
+        [JsonProperty("unlocks")] public string Unlocks;
+        [JsonProperty("target")] public string Target;
+
+        public bool IsEmpty =>
+            Blank(Background) && Blank(Position) && Blank(PortraitEffect) && Blank(Cg) && Blank(ScreenEffect)
+            && Blank(Sfx) && Blank(Bgm) && Blank(Attributes) && Blank(Items) && Blank(Unlocks) && Blank(Target);
+
+        static bool Blank(string s) => string.IsNullOrWhiteSpace(s);
     }
 
     public static class StoryLoader {

@@ -11,7 +11,8 @@ import {
   type PlayerState,
   type PlayerStatus,
 } from '../src/runtime/player';
-import { FORMAT_VERSION, type StoryNode, type StoryProject } from '../src/schema/story';
+import { FORMAT_VERSION, type Stage, type StoryNode, type StoryProject } from '../src/schema/story';
+import { parseStage } from '../src/stage/directives';
 import { DEFAULT_TAG_REGISTRY } from '../src/schema/tags';
 import { parseText, type ResolvedTag } from '../src/tags/parse';
 import { interpolate } from '../src/tags/interpolate';
@@ -248,6 +249,9 @@ interface Snapshot {
   visited: string[];
   pendingInputs: string[];
   availableChoices: string[];
+  /** 這一步經過的演出，寫成「kind:id」。 */
+  cues: string[];
+  effects: { name: string; delta: number; variable: string | null; target: string | null }[];
   variables: Record<string, EncodedValue>;
 }
 
@@ -273,6 +277,8 @@ function snapshot(state: PlayerState): Snapshot {
     visited: [...state.visited],
     pendingInputs: [...state.pendingInputs],
     availableChoices: [...state.availableChoices],
+    cues: state.cues.map((c) => `${c.kind}:${c.id}`),
+    effects: state.effects.map((e) => ({ ...e })),
     variables,
   };
 }
@@ -464,6 +470,44 @@ const undefinedUnlock = project([
   }),
 ]);
 
+// 演出欄位：進場時的背景／效果、控制列上的音效、分支與選項自己的屬性變化。
+// 「心情」是文字變數不能加減、「未知」不在屬性清單裡 —— 兩者都只記 effect、不改變數
+const withStage = project(
+  [
+    node('open', {
+      next: 'calc',
+      stage: { background: '店內-白天', screenEffect: '睜眼效果', attributes: '信任+1' },
+    }),
+    node('calc', { kind: 'set', expression: 'score = trust * 10', next: 'gate', stage: { sfx: '門鈴' } }),
+    node('gate', {
+      kind: 'branch',
+      branches: [
+        { id: 'b1', condition: 'trust >= 1', targetNodeId: 'ask', stage: { attributes: '幹勁+2' }, extras: {} },
+        { id: 'b2', condition: 'trust < 1', targetNodeId: 'ask', extras: {} },
+      ],
+    }),
+    node('ask', {
+      choices: [
+        {
+          id: 'c1',
+          text: { zh: '先試做拿鐵' },
+          targetNodeId: 'end',
+          stage: { attributes: '信任-1，未知+1，心情+1', target: '新人', sfx: '杯子' },
+          extras: {},
+        },
+        { id: 'c2', text: { zh: '先整理吧台' }, targetNodeId: 'end', extras: {} },
+      ],
+    }),
+    node('end', { kind: 'end', stage: { bgm: '停止 2' } }),
+  ],
+  [
+    { id: 'trust', type: 'number', default: 0, description: '', label: '信任' },
+    { id: 'motivation', type: 'number', default: 0, description: '', label: '幹勁' },
+    { id: 'mood', type: 'string', default: '普通', description: '', label: '心情' },
+    { id: 'score', type: 'number', default: 0, description: '' },
+  ],
+);
+
 const brokenJump = project([node('only', { next: 'nowhere' })]);
 
 const infiniteLoop = project([
@@ -498,6 +542,8 @@ const playthroughs: PlaythroughCase[] = [
   playthrough('解鎖條件在抵達時才判斷', unlockAfterSet, 'scene', [['advance'], ['choose', 'warm']]),
   playthrough('解鎖條件語法錯誤', brokenUnlock, 'scene', []),
   playthrough('解鎖條件用到未定義的變數', undefinedUnlock, 'scene', []),
+  playthrough('演出：進場、控制列、分支與選項的屬性變化', withStage, 'scene', [['advance'], ['choose', 'c1']]),
+  playthrough('演出：沒有演出的選項不留 cue', withStage, 'scene', [['advance'], ['choose', 'c2']]),
   playthrough('跳轉指向不存在的節點', brokenJump, 'scene', [['advance']]),
   playthrough('無限迴圈會被擋下', infiniteLoop, 'scene', []),
   playthrough('找不到場景', linear, 'nope', []),
@@ -693,7 +739,52 @@ function write(name: string, payload: unknown): string {
 }
 
 write('expressions.json', { version: 1, expressions, assignments, inputs });
+// ---------------------------------------------------------------- 演出欄位
+
+interface DirectiveCase {
+  stage: Stage;
+  parsed: ReturnType<typeof parseStage>;
+}
+
+const directiveCase = (stage: Stage): DirectiveCase => ({ stage, parsed: parseStage(stage) });
+
+const directives: DirectiveCase[] = [
+  directiveCase({}),
+  directiveCase({ background: '店內-白天' }),
+  directiveCase({ background: '無', cg: 'cg-開幕準備' }),
+  directiveCase({ cg: '無' }),
+  directiveCase({ background: '兩個 代號' }),
+  directiveCase({ screenEffect: '睜眼效果' }),
+  directiveCase({ screenEffect: '睜眼 1.5，震動 0.2 2，閃白，黑幕' }),
+  directiveCase({ screenEffect: '淡出 1, 淡入 0.25 ，溶接 0.8，閉眼' }),
+  directiveCase({ screenEffect: 'OpenNameInput，OpenBirthdayInput' }),
+  directiveCase({ screenEffect: '轉圈，淡入 1 2，震動 快，淡出 0.4' }),
+  directiveCase({ sfx: '門鈴，杯子, 腳步聲' }),
+  directiveCase({ bgm: '早晨的店' }),
+  directiveCase({ bgm: '早晨的店 2.5' }),
+  directiveCase({ bgm: '停止 1' }),
+  directiveCase({ bgm: '早晨 慢 一點' }),
+  directiveCase({ attributes: '信任+1，幹勁-1' }),
+  directiveCase({ attributes: ' 親切度EXP + 3 , 幹勁－2，信任＋1 ' }),
+  directiveCase({ attributes: '信任1，幹勁+' }),
+  directiveCase({ items: '咖啡豆×2，紙杯，牛奶x3，糖*1' }),
+  directiveCase({ items: '咖啡豆×，兩 包' }),
+  directiveCase({ unlocks: '咖啡機，收銀台', target: '新人' }),
+  directiveCase({
+    background: '店門口',
+    cg: '無',
+    screenEffect: '淡入 1',
+    sfx: '門鈴',
+    bgm: '早晨的店 2',
+    attributes: '信任+1',
+    items: '紙杯',
+    unlocks: '吧台',
+    target: '店長',
+  }),
+];
+
 write('playthroughs.json', { version: 1, playthroughs });
+write('directives.json', { version: 1, directives });
 write('tags.json', { version: 1, registry: DEFAULT_TAG_REGISTRY, tags });
 write('schedules.json', { version: 1, baseCharsPerSecond: BASE_CHARS_PER_SECOND, schedules });
 write('interpolations.json', { version: 1, interpolations });
@@ -703,6 +794,7 @@ console.log(
     `  運算式 ${expressions.length}（其中解析失敗 ${expressions.filter((c) => c.parseError).length}、` +
     `求值失敗 ${expressions.filter((c) => c.evalError).length}）\n` +
     `  賦值 ${assignments.length}、輸入節點 ${inputs.length}\n` +
+    `  演出欄位 ${directives.length}\n` +
     `  整場走訪 ${playthroughs.length}，共 ${playthroughs.reduce((n, p) => n + p.snapshots.length, 0)} 個快照\n` +
     `  特效標記 ${tags.length}（其中有問題的 ${tags.filter((t) => t.issues.length > 0).length} 個）
 ` +

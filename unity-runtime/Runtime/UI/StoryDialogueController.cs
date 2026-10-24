@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using StoryRuntime.Story;
 using StoryRuntime.Unity;
 using TMPro;
@@ -13,17 +14,28 @@ namespace StoryRuntime.UI {
 
         [Tooltip("StoryEditor 匯出的 .story.json")] public TextAsset storyFile;
         public StoryPortraitTable portraits;
+        [Tooltip("劇本「背景」欄的代號 → 圖")] public StorySpriteTable backgrounds;
+        [Tooltip("劇本「插圖」欄的代號 → 圖")] public StorySpriteTable cgs;
+        [Tooltip("效果音、OST 的代號 → 音檔；遊戲有自己的音效系統就改用 UseAudio")] public StoryAudioTable audioTable;
         [Tooltip("留空用 TMP 預設字型；中文劇本要指定有中文字的字型")] public TMP_FontAsset font;
 
         // 對話開始與結束：遊戲用來藏 HUD、通知堆疊之類會跟對話框打架的東西
         public event Action Opened;
         public event Action Closed;
 
+        // 劇本裡交給遊戲的事：屬性變化（已依屬性清單套到變數上）、物品消耗、功能解鎖、
+        // 舊寫法的輸入提示（畫面效果欄的 OpenNameInput 之類）
+        public event Action<IReadOnlyList<AttributeEffect>> AttributesChanged;
+        public event Action<IReadOnlyList<ItemChange>, string> ItemsConsumed;
+        public event Action<IReadOnlyList<string>> FeaturesUnlocked;
+        public event Action<string> InputHinted;
+
         public StorySpeakerRules Speakers { get; set; } = new StorySpeakerRules();
         public PlayerOptions Options { get; set; }
 
         StoryProject _project;
         IStoryDialogueView _view;
+        IStoryAudio _audio;
         StoryPresenter _presenter;
 
         public bool IsPlaying => _presenter != null && _presenter.IsPlaying;
@@ -37,6 +49,20 @@ namespace StoryRuntime.UI {
 
         // 換皮：在第一次播放前換掉畫面
         public void UseView(IStoryDialogueView view) => _view = view;
+
+        // 改用遊戲自己的音效系統
+        public void UseAudio(IStoryAudio audio) => _audio = audio;
+
+        public IStoryAudio Audio {
+            get {
+                if (_audio != null && !(_audio is UnityEngine.Object o && o == null)) return _audio;
+                if (audioTable == null) return null;
+                var player = gameObject.AddComponent<StoryAudioPlayer>();
+                player.table = audioTable;
+                _audio = player;
+                return _audio;
+            }
+        }
 
         public StoryProject Project {
             get {
@@ -98,7 +124,15 @@ namespace StoryRuntime.UI {
             }
             if (!ViewAlive) _view = StoryDialogueView.Create(font);
 
-            var presenter = new StoryPresenter(_view, Project, variables, portraits, Speakers, Options);
+            var presenter = new StoryPresenter(_view, Project, variables, portraits, Speakers, Options) {
+                Backgrounds = backgrounds,
+                Cgs = cgs,
+                Audio = Audio,
+            };
+            presenter.OnEffects   += effects => AttributesChanged?.Invoke(effects);
+            presenter.OnItems     += (items, target) => ItemsConsumed?.Invoke(items, target);
+            presenter.OnUnlocks   += keys => FeaturesUnlocked?.Invoke(keys);
+            presenter.OnInputHint += key => InputHinted?.Invoke(key);
             _presenter = presenter;
             Opened?.Invoke();
             begin(presenter);

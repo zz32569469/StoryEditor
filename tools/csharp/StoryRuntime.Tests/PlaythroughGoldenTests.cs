@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using StoryRuntime.Expressions;
@@ -93,6 +94,21 @@ namespace StoryRuntime.Tests {
             Assert.Equal(expected["visited"].ToObject<List<string>>(), state.Visited);
             Assert.Equal(expected["pendingInputs"].ToObject<List<string>>(), state.PendingInputs);
             Assert.Equal(expected["availableChoices"].ToObject<List<string>>(), state.AvailableChoices);
+
+            var cues = new List<string>();
+            foreach (StoryCue cue in state.Cues) cues.Add($"{cue.Kind.ToString().ToLowerInvariant()}:{cue.Id}");
+            Assert.True(expected["cues"].ToObject<List<string>>().SequenceEqual(cues),
+                $"{where} 演出提示不同：TS 是 {string.Join(",", expected["cues"])}，C# 是 {string.Join(",", cues)}");
+
+            var effects = (JArray)expected["effects"];
+            Assert.True(effects.Count == state.Effects.Count, $"{where} 屬性變化筆數不同");
+            for (int i = 0; i < effects.Count; i += 1) {
+                AttributeEffect actual = state.Effects[i];
+                Assert.Equal((string)effects[i]["name"], actual.Name);
+                Assert.Equal((double)effects[i]["delta"], actual.Delta);
+                Assert.Equal((string)effects[i]["variable"], actual.Variable);
+                Assert.Equal((string)effects[i]["target"], actual.Target);
+            }
 
             var expectedVars = (JObject)expected["variables"];
             foreach (var pair in expectedVars) {

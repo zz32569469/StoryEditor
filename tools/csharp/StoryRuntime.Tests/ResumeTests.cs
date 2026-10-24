@@ -11,7 +11,10 @@ namespace StoryRuntime.Tests {
 
         const string Json = @"{
             ""meta"": { ""formatVersion"": ""1.3.0"", ""languages"": [""zh""], ""baseLanguage"": ""zh"" },
-            ""variables"": [{ ""id"": ""affection"", ""type"": ""number"", ""default"": 0 }],
+            ""variables"": [
+                { ""id"": ""affection"", ""type"": ""number"", ""default"": 0 },
+                { ""id"": ""trust"", ""type"": ""number"", ""default"": 0, ""label"": ""信任"" }
+            ],
             ""scenes"": [{
                 ""id"": ""scene"", ""name"": ""測試"", ""entryNodeId"": ""open"",
                 ""nodes"": [
@@ -21,7 +24,7 @@ namespace StoryRuntime.Tests {
                         { ""id"": ""plain"", ""text"": { ""zh"": ""普通"" }, ""targetNodeId"": ""after"" },
                         { ""id"": ""warm"", ""text"": { ""zh"": ""熟了"" }, ""targetNodeId"": ""after"", ""condition"": ""affection >= 30"" }
                     ] },
-                    { ""id"": ""after"", ""text"": { ""zh"": ""之後"" } }
+                    { ""id"": ""after"", ""text"": { ""zh"": ""之後"" }, ""stage"": { ""background"": ""店內"", ""attributes"": ""信任+1"" } }
                 ]
             }]
         }";
@@ -49,6 +52,21 @@ namespace StoryRuntime.Tests {
             Assert.Equal(new List<string> { "plain" }, state.AvailableChoices);
             Assert.True(variables.TryGet("affection", out StoryValue affection));
             Assert.Equal("10", affection.ToDisplayString());
+        }
+
+        // 存檔時那一句已經進入過、屬性變化套用過了；讀檔要重畫背景，但不能再加一次
+        [Fact]
+        public void ResumeAtReplaysStageButNotAttributes() {
+            var variables = new Variables();
+            variables.Set("trust", StoryValue.Number(1));
+
+            StoryState state = StoryPlayer.ResumeAt(Project, "scene", "after", variables);
+
+            Assert.Single(state.Cues);
+            Assert.Equal("店內", state.Cues[0].Stage.Background);
+            Assert.Empty(state.Effects);
+            Assert.True(variables.TryGet("trust", out StoryValue trust));
+            Assert.Equal("1", trust.ToDisplayString());
         }
 
         [Fact]

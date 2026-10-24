@@ -37,6 +37,26 @@ namespace StoryRuntime.Story {
         public string Error;
         // 走過的節點，用來偵測無限迴圈，也方便測試比對走訪路徑。
         public List<string> Visited = new List<string>();
+        // 這一步（一次 Start／Advance／Choose／SubmitInput）經過、且有演出欄位的節點／選項／分支，依序。
+        // 畫面層照這份清單依序執行背景、插圖、畫面效果、音效…；控制列（set／if）上的演出也在裡面
+        public List<StoryCue> Cues = new List<StoryCue>();
+        // 這一步套用的屬性變化，給遊戲接到自己的數值上。找不到變數的 Variable 為 null（沒有套用）
+        public List<AttributeEffect> Effects = new List<AttributeEffect>();
+    }
+
+    public enum CueKind { Node, Choice, Branch }
+
+    public sealed class StoryCue {
+        public CueKind Kind;
+        public string Id;
+        public StoryStage Stage;
+    }
+
+    public sealed class AttributeEffect {
+        public string Name;
+        public double Delta;
+        public string Variable;
+        public string Target;
     }
 
     public sealed class PlayerOptions {
@@ -81,12 +101,13 @@ namespace StoryRuntime.Story {
             if (scene == null) return Fail(state, $"找不到場景 {sceneId}");
 
             state.NodeId = scene.EntryNodeId;
-            return Settle(state, scene, variables, options);
+            return Settle(project, state, scene, variables, options);
         }
 
         // 讀檔用：從存檔記下的節點重新進入，停在那一句的開頭。
         // 存檔只會記在停得下來的節點（台詞、選項、輸入），所以 Settle 不會重跑任何 set ——
         // 選項的解鎖條件則會依讀檔當下的變數重新判斷。
+        // 那一句的演出照樣出現在 Cues（背景、立繪要重畫），但屬性變化在存檔前就套用過了，不再加一次
         public static StoryState ResumeAt(
             StoryProject project, string sceneId, string nodeId, IStoryVariables variables, PlayerOptions options = null) {
 
@@ -96,7 +117,7 @@ namespace StoryRuntime.Story {
             if (scene.FindNode(nodeId) == null) return Fail(state, $"找不到節點 {nodeId}");
 
             state.NodeId = nodeId;
-            return Settle(state, scene, variables, options);
+            return Settle(project, state, scene, variables, options, replayFirst: true);
         }
 
         public static StoryState Advance(
@@ -109,8 +130,9 @@ namespace StoryRuntime.Story {
             StoryNode node = scene.FindNode(state.NodeId);
             if (node == null) return Fail(state, $"找不到節點 {state.NodeId}");
 
+            BeginStep(state);
             state.NodeId = node.Next;
-            return Settle(state, scene, variables, options);
+            return Settle(project, state, scene, variables, options);
         }
 
         public static StoryState Choose(
@@ -133,8 +155,10 @@ namespace StoryRuntime.Story {
                 return Fail(state, $"選項 {choiceId} 的條件不成立，不能選");
             }
 
+            BeginStep(state);
+            Enter(project, state, variables, CueKind.Choice, choice.Id, choice.Stage);
             state.NodeId = choice.TargetNodeId;
-            return Settle(state, scene, variables, options);
+            return Settle(project, state, scene, variables, options);
         }
 
         public static StoryState SubmitInput(
@@ -153,9 +177,10 @@ namespace StoryRuntime.Story {
                 variables.Set(name, CoerceInput(project, name, raw));
             }
 
+            BeginStep(state);
             state.PendingInputs = new List<string>();
             state.NodeId = node.Next;
-            return Settle(state, scene, variables, options);
+            return Settle(project, state, scene, variables, options);
         }
 
         // 依變數的宣告型別轉換，而不是看輸入長得像什麼。
@@ -193,7 +218,8 @@ namespace StoryRuntime.Story {
         // 從指定節點往下跑，直到停在需要玩家操作的地方。
         // branch / set 這類流程控制節點不需要玩家介入，會連續處理完。
         static StoryState Settle(
-            StoryState state, StoryScene scene, IStoryVariables variables, PlayerOptions options) {
+            StoryProject project, StoryState state, StoryScene scene, IStoryVariables variables, PlayerOptions options,
+            bool replayFirst = false) {
 
             var context = new EvalContext {
                 Variables = variables,
@@ -211,6 +237,7 @@ namespace StoryRuntime.Story {
                 if (node == null) return Fail(state, $"找不到節點 {state.NodeId}");
 
                 state.Visited.Add(node.Id);
+                Enter(project, state, variables, CueKind.Node, node.Id, node.Stage, applyAttributes: !(replayFirst && step == 0));
 
                 switch (node.Kind) {
                     case "end":
@@ -242,6 +269,7 @@ namespace StoryRuntime.Story {
                     case "branch": {
                         bool taken = false;
                         string target = null;
+                        StoryBranch takenBranch = null;
                         foreach (StoryBranch branch in node.Branches) {
                             ParseResult<Expr> parsed = ExprParser.ParseExpression(branch.Condition);
                             if (!parsed.Ok) {
@@ -252,6 +280,7 @@ namespace StoryRuntime.Story {
                             if (result.Value.IsTruthy()) {
                                 taken = true;
                                 target = branch.TargetNodeId;
+                                takenBranch = branch;
                                 break;
                             }
                         }
@@ -261,6 +290,7 @@ namespace StoryRuntime.Story {
                             foreach (StoryBranch branch in node.Branches) conditions.Add(branch.Condition);
                             return Fail(state, $"分支沒有任何條件成立：{string.Join("、", conditions)}");
                         }
+                        Enter(project, state, variables, CueKind.Branch, takenBranch.Id, takenBranch.Stage);
                         state.NodeId = target;
                         continue;
                     }
@@ -300,6 +330,52 @@ namespace StoryRuntime.Story {
             }
 
             return Fail(state, $"連續處理超過 {MaxSteps} 個節點，可能有無限迴圈");
+        }
+
+        // 每一步開始時清空：Cues／Effects 只描述「這一步」發生的事
+        static void BeginStep(StoryState state) {
+            state.Cues = new List<StoryCue>();
+            state.Effects = new List<AttributeEffect>();
+        }
+
+        // 進入一列（或選了選項、走了分支）時的演出：記下 cue，並套用屬性變化。
+        // 屬性變化在走訪當下就套用，所以同一次推進中緊接的 if 看得到新值。
+        // 名稱照變數的 label（屬性清單）找；找不到、或變數不是數字，只記 effect、不改任何變數
+        static void Enter(StoryProject project, StoryState state, IStoryVariables variables,
+                          CueKind kind, string id, StoryStage stage, bool applyAttributes = true) {
+            if (stage == null || stage.IsEmpty) return;
+            state.Cues.Add(new StoryCue { Kind = kind, Id = id, Stage = stage });
+            if (!applyAttributes) return;
+
+            ParsedStage parsed = StageParser.Parse(stage);
+            foreach (AttributeChange change in parsed.Attributes) {
+                StoryVariable variable = FindAttribute(project, change.Name);
+                bool applied = false;
+                if (variable != null && variable.Type == "number") {
+                    bool has = variables.TryGet(variable.Id, out StoryValue current);
+                    if (!has || current.IsNumber) {
+                        variables.Set(variable.Id, StoryValue.Number((has ? current.AsNumber : 0) + change.Delta));
+                        applied = true;
+                    }
+                }
+                state.Effects.Add(new AttributeEffect {
+                    Name = change.Name,
+                    Delta = change.Delta,
+                    Variable = applied ? variable.Id : null,
+                    Target = parsed.Target,
+                });
+            }
+        }
+
+        // label 優先，也接受直接寫變數 id（跟網頁端的 attributeTable 一樣：label 會蓋掉同名的 id）
+        public static StoryVariable FindAttribute(StoryProject project, string name) {
+            foreach (StoryVariable variable in project.Variables) {
+                if (!string.IsNullOrWhiteSpace(variable.Label) && variable.Label.Trim() == name) return variable;
+            }
+            foreach (StoryVariable variable in project.Variables) {
+                if (variable.Id == name) return variable;
+            }
+            return null;
         }
 
         static Dictionary<string, HostFunction> MergeFunctions(PlayerOptions options) {

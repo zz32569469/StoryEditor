@@ -1014,3 +1014,19 @@ button.link {
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* ---------- 演出欄位 ---------- */
+
+.stage-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stage-fields .field span {
+  min-width: 4.5em;
+}
+
+.stage-fields .issue-list {
+  grid-column: 1 / -1;
+}

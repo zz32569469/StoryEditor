@@ -1,3 +1,4 @@
+import { migrateStageExtras } from '../stage/migrate';
 import { collectPlaceholders, TMP_BARE_TAGS } from '../tags/interpolate';
 import { FORMAT_VERSION, StoryProjectSchema } from './story';
 import type { StoryProject } from './story';
@@ -274,10 +275,11 @@ export function validateStoryProject(data: unknown): ValidationResult {
       })),
     };
   }
-  const issues = checkReferences(parsed.data);
+  const project = migrateStageExtras(parsed.data);
+  const issues = checkReferences(project);
   return {
     ok: !issues.some((i) => i.level === 'error'),
     issues,
-    project: parsed.data,
+    project,
   };
 }

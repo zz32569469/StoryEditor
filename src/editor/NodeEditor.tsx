@@ -4,6 +4,7 @@ import { useEditor, useSelectedNode, useSelectedScene } from '../state/store';
 import { parseText } from '../tags/parse';
 import { ExpressionField } from './ExpressionField';
 import { KIND_LABEL, summarizeNode } from './nodeKind';
+import { StageFields } from './StageFields';
 import { TagToolbar } from './TagToolbar';
 
 /**
@@ -126,6 +127,13 @@ export function NodeEditor() {
           </label>
         )}
 
+        {node.kind !== 'branch' && (
+          <details className="field field--stack" open={!!node.stage}>
+            <summary>演出（經過這一列時生效）</summary>
+            <StageFields stage={node.stage} onChange={(stage) => updateNode(node.id, { stage })} />
+          </details>
+        )}
+
         <ExtrasList entries={extraEntries} />
         <p className="node-id">id: {node.id}</p>
       </div>
@@ -236,6 +244,14 @@ export function NodeEditor() {
                 updateChoice(node.id, choice.id, { condition: next.trim() ? next : undefined })
               }
             />
+            <details open={!!choice.stage}>
+              <summary>選了之後的演出</summary>
+              <StageFields
+                stage={choice.stage}
+                fields={['attributes', 'target', 'sfx', 'screenEffect', 'background', 'cg', 'bgm', 'items', 'unlocks']}
+                onChange={(stage) => updateChoice(node.id, choice.id, { stage })}
+              />
+            </details>
           </div>
         ))}
       </div>
@@ -256,6 +272,11 @@ export function NodeEditor() {
           </select>
         </label>
       )}
+
+      <details className="field field--stack" open={!!node.stage}>
+        <summary>演出（背景、插圖、畫面效果、音效、屬性變化…）</summary>
+        <StageFields stage={node.stage} onChange={(stage) => updateNode(node.id, { stage })} />
+      </details>
 
       <label className="field field--stack">
         <span>備註（給翻譯者，會匯出到 Excel）</span>
