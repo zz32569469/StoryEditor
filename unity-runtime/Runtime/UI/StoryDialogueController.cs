@@ -27,6 +27,8 @@ namespace StoryRuntime.UI {
         public StoryReadHistory ReadHistory { get; } = new StoryReadHistory();
         // 快速存檔放哪裡；沒指定時存成 persistentDataPath/story-quicksave.json
         public IStoryQuickSaveStore QuickSaves { get; set; }
+        // 遊戲自己處理快存快讀（存成自己的存檔欄位）時設定；設定了就不用 QuickSaves
+        public IStoryQuickSaveHandler QuickSaveHandler { get; set; }
 
         // 對話開始與結束：遊戲用來藏 HUD、通知堆疊之類會跟對話框打架的東西
         public event Action Opened;
@@ -142,6 +144,7 @@ namespace StoryRuntime.UI {
                 ReadHistory = ReadHistory,
                 QuickSaves = QuickSaves ?? (QuickSaves = new FileQuickSaveStore(System.IO.Path.Combine(Application.persistentDataPath, "story-quicksave.json"))),
                 TextSpeed = textSpeed,
+                QuickSaveHandler = QuickSaveHandler,
             };
             Backlog.Capacity = backlogCapacity;
             presenter.OnEffects   += effects => AttributesChanged?.Invoke(effects);

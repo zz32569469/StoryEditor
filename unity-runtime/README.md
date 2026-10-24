@@ -56,7 +56,8 @@ yield return controller.Play("第一章");   // 用工作表名稱找場景，�
 - **文字速度**：慢 ×0.5、普通、快 ×2、瞬間（整句直接出現），倍率同時套在每字時間與句末停頓。
   玩家切換後寫回 `controller.textSpeed`，下一場沿用；要記到設定檔由遊戲自己存。
 - **快存／快讀**：一格，內容是停在哪一句、劇本宣告的變數值、讀過的句子、對話紀錄（`StoryQuickSave`，可整份轉 JSON）。
-  預設存成 `persistentDataPath/story-quicksave.json`；`controller.QuickSaves` 可換成遊戲自己的存放處。
+  預設存成 `persistentDataPath/story-quicksave.json`；`controller.QuickSaves` 可換成遊戲自己的存放處，
+  或設 `controller.QuickSaveHandler` 把快存快讀整個交給遊戲的存檔系統（存成遊戲存檔的一格）。
 - **隱藏（右鍵）**：收起對話框看全畫面；再點一下、右鍵、Space 或 Enter 叫回來，那一下不會前進。
 
 ### 演出
