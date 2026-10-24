@@ -639,6 +639,30 @@ namespace StoryRuntime.UI.Tests {
             p.Dispose();
         }
 
+        sealed class FakeHandler : IStoryQuickSaveHandler {
+            public bool HasSave;
+            public int Saves, Loads;
+            public bool QuickSave() { Saves++; HasSave = true; return true; }
+            public bool QuickLoad() { Loads++; return HasSave; }
+        }
+
+        [Test]
+        public void QuickSave_HandlerTakesOverFromStore() {
+            var handler = new FakeHandler();
+            var store = new MemoryQuickSaveStore();
+            var p = new StoryPresenter(_view, _project, _vars, _table) { QuickSaves = store, QuickSaveHandler = handler };
+            p.Start("s");
+            _view.ClickQuickLoad();
+            Assert.AreEqual("還沒有快速存檔", _view.Notice);
+            _view.ClickQuickSave();
+            Assert.AreEqual("已快速存檔", _view.Notice);
+            _view.ClickQuickLoad();
+            Assert.AreEqual("已讀取快速存檔", _view.Notice);
+            Assert.AreEqual((1, 2), (handler.Saves, handler.Loads));
+            Assert.IsNull(store.Load(), "交給遊戲時不用內建的存放處");
+            p.Dispose();
+        }
+
         // ── 假畫面 ───────────────────────────────────────────
 
         sealed class FakeView : IStoryDialogueView {

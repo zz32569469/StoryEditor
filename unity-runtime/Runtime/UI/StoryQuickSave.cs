@@ -44,6 +44,14 @@ namespace StoryRuntime.UI {
         StoryQuickSave Load();
     }
 
+    // 遊戲有完整存檔系統時用：快存／快讀整個交給遊戲（例如存成遊戲存檔的一格，連時間、背包一起），
+    // Presenter 只負責顯示提示。回傳 false 代表沒存成功／沒有可讀的快速存檔。
+    // QuickLoad 通常會讓遊戲中斷目前的劇情再從存檔那一句重播，呼叫它的 Presenter 之後可能已經被換掉
+    public interface IStoryQuickSaveHandler {
+        bool QuickSave();
+        bool QuickLoad();
+    }
+
     public sealed class MemoryQuickSaveStore : IStoryQuickSaveStore {
         string _json;
         public void Save(StoryQuickSave data) => _json = data.ToJson();

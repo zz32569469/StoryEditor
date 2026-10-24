@@ -114,6 +114,8 @@ namespace StoryRuntime.UI {
         public StoryBacklog Backlog { get; set; } = new StoryBacklog();
         public StoryReadHistory ReadHistory { get; set; } = new StoryReadHistory();
         public IStoryQuickSaveStore QuickSaves { get; set; }
+        // 有設定時優先：快存快讀交給遊戲自己的存檔系統，QuickSaves 不用
+        public IStoryQuickSaveHandler QuickSaveHandler { get; set; }
         public bool Skip { get; private set; }
 
         double _textSpeed = 1;
@@ -313,13 +315,23 @@ namespace StoryRuntime.UI {
         }
 
         void HandleQuickSave() {
-            if (!IsPlaying || QuickSaves == null) return;
+            if (!IsPlaying) return;
+            if (QuickSaveHandler != null) {
+                _view.ShowNotice(QuickSaveHandler.QuickSave() ? "已快速存檔" : "快速存檔失敗");
+                return;
+            }
+            if (QuickSaves == null) return;
             QuickSaves.Save(CaptureQuickSave());
             _view.ShowNotice("已快速存檔");
         }
 
         void HandleQuickLoad() {
-            if (!IsPlaying || QuickSaves == null) return;
+            if (!IsPlaying) return;
+            if (QuickSaveHandler != null) {
+                _view.ShowNotice(QuickSaveHandler.QuickLoad() ? "已讀取快速存檔" : "還沒有快速存檔");
+                return;
+            }
+            if (QuickSaves == null) return;
             var data = QuickSaves.Load();
             if (data == null) { _view.ShowNotice("還沒有快速存檔"); return; }
             ApplyQuickSave(data);
