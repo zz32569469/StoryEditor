@@ -5,7 +5,7 @@
       "name": "線性推進到結束",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -136,7 +136,7 @@
       "name": "選左邊",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -285,7 +285,7 @@
       "name": "選右邊",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -434,7 +434,7 @@
       "name": "選了不存在的選項",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -569,7 +569,7 @@
       "name": "分支走高值",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -720,7 +720,7 @@
       "name": "分支走低值",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -871,7 +871,7 @@
       "name": "分支邊界值 74",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1022,7 +1022,7 @@
       "name": "沒有條件成立",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1147,7 +1147,7 @@
       "name": "輸入與賦值",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1355,7 +1355,7 @@
       "name": "數字型別的輸入不吃前導零",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1530,7 +1530,7 @@
       "name": "解鎖條件不成立的選項不出現",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1691,7 +1691,7 @@
       "name": "解鎖條件成立的選項出現並可選",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1865,7 +1865,7 @@
       "name": "選了被鎖住的選項",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2036,7 +2036,7 @@
       "name": "所有選項都被鎖住",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2131,7 +2131,7 @@
       "name": "解鎖條件在抵達時才判斷",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2295,7 +2295,7 @@
       "name": "解鎖條件語法錯誤",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2370,7 +2370,7 @@
       "name": "解鎖條件用到未定義的變數",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2445,7 +2445,7 @@
       "name": "跳轉指向不存在的節點",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2517,7 +2517,7 @@
       "name": "無限迴圈會被擋下",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -3587,7 +3587,7 @@
       "name": "找不到場景",
       "project": {
         "meta": {
-          "formatVersion": "1.3.0",
+          "formatVersion": "1.4.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"

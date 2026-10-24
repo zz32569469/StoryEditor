@@ -11,6 +11,7 @@ import { basename, dirname, resolve } from 'node:path';
 
 import { importLegacyWorkbook } from '../src/legacy/import';
 import type { StoryProject } from '../src/schema/story';
+import { checkScript } from '../src/schema/scriptCheck';
 import { validateStoryProject } from '../src/schema/validate';
 
 const input = process.argv[2];
@@ -69,6 +70,13 @@ const warns = validation.issues.filter((i) => i.level === 'warning');
 console.log(`\n驗證：${errors.length} 錯誤，${warns.length} 提醒`);
 for (const issue of [...errors, ...warns].slice(0, 20)) {
   console.log(`  [${issue.level}] ${issue.path}：${issue.message}`);
+}
+
+// 劇本內容的錯（例如屬性名稱打錯）全部列出，讓作者回 Excel 改；不擋下寫檔
+const scriptIssues = checkScript(project);
+if (scriptIssues.length > 0) {
+  console.log(`\n劇本檢查：${scriptIssues.length} 處要修`);
+  for (const issue of scriptIssues) console.log(`  ${issue.path}：${issue.message}`);
 }
 
 if (errors.length > 0) {

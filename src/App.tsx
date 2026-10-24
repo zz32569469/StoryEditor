@@ -14,6 +14,7 @@ import { checkLegacyExport, exportLegacyWorkbook } from './legacy/export';
 import { importLegacyWorkbook } from './legacy/import';
 import { DialogueStage } from './preview/DialogueStage';
 import { KIND_LABEL } from './editor/nodeKind';
+import { checkScript } from './schema/scriptCheck';
 import { checkReferences, validateStoryProject } from './schema/validate';
 import { useEditor } from './state/store';
 import { usePopoutWindow } from './ui/usePopoutWindow';
@@ -76,7 +77,8 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [project]);
 
-  const issues = useMemo(() => checkReferences(project), [project]);
+  // 劇本內容檢查（屬性名稱寫錯之類）跟參照錯誤一起顯示，但不擋開檔與匯入
+  const issues = useMemo(() => [...checkReferences(project), ...checkScript(project)], [project]);
   const errorCount = issues.filter((i) => i.level === 'error').length;
 
   /**
@@ -147,6 +149,7 @@ export default function App() {
     }
 
     loadProject(validation.project);
+    const scriptIssues = checkScript(validation.project);
 
     const kinds = Object.entries(report.nodesByKind)
       .map(([k, v]) => `${KIND_LABEL[k as keyof typeof KIND_LABEL] ?? k} ${v}`)
@@ -156,7 +159,11 @@ export default function App() {
       `已匯入「${name}」：${report.scenes} 個場景、${report.rows} 列來源資料 → ${kinds}；` +
         `選項 ${report.choices}、分支 ${report.branches}、角色 ${report.characters.length}。` +
         (kept.length > 0 ? `保留製作欄位：${kept.join('、')}。` : '') +
-        (report.warnings.length > 0 ? ` 提醒 ${report.warnings.length} 項：${report.warnings[0]}` : ''),
+        (report.warnings.length > 0 ? ` 提醒 ${report.warnings.length} 項：${report.warnings[0]}` : '') +
+        (scriptIssues.length > 0
+          ? ` 劇本檢查有 ${scriptIssues.length} 處要修（滑過右上角的問題數可看全部），第一處：` +
+            `${scriptIssues[0]!.path}：${scriptIssues[0]!.message}`
+          : ''),
     );
   };
 
@@ -281,7 +288,7 @@ export default function App() {
 
         <div className="toolbar-status">
           {errorCount > 0 ? (
-            <span className="badge badge--error" title={issues.map((i) => i.message).join('\n')}>
+            <span className="badge badge--error" title={issues.map((i) => `${i.path}：${i.message}`).join('\n')}>
               {errorCount} 項問題
             </span>
           ) : (
