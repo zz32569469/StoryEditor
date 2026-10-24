@@ -19,6 +19,14 @@ namespace StoryRuntime.UI {
         [Tooltip("劇本「插圖」欄的代號 → 圖")] public StorySpriteTable cgs;
         [Tooltip("效果音、OST 的代號 → 音檔；遊戲有自己的音效系統就改用 UseAudio")] public StoryAudioTable audioTable;
         [Tooltip("留空用 TMP 預設字型；中文劇本要指定有中文字的字型")] public TMP_FontAsset font;
+        [Tooltip("文字速度倍率：1 = 每字 35ms，2 = 快一倍，0 = 整句直接出現。玩家按「速度」切換後會寫回這裡")] public float textSpeed = 1;
+        [Tooltip("對話紀錄保留幾筆，超過丟掉最舊的")] public int backlogCapacity = StoryBacklog.DefaultCapacity;
+
+        // 跨場景共用的閱讀狀態。讀過的句子要跟遊戲存檔一起存（ReadHistory.Keys／Load），「略過」才分得出新舊
+        public StoryBacklog Backlog { get; } = new StoryBacklog();
+        public StoryReadHistory ReadHistory { get; } = new StoryReadHistory();
+        // 快速存檔放哪裡；沒指定時存成 persistentDataPath/story-quicksave.json
+        public IStoryQuickSaveStore QuickSaves { get; set; }
 
         // 對話開始與結束：遊戲用來藏 HUD、通知堆疊之類會跟對話框打架的東西
         public event Action Opened;
@@ -130,7 +138,12 @@ namespace StoryRuntime.UI {
                 Cgs = cgs,
                 Audio = Audio,
                 DefaultSlot = defaultPortraitSlot,
+                Backlog = Backlog,
+                ReadHistory = ReadHistory,
+                QuickSaves = QuickSaves ?? (QuickSaves = new FileQuickSaveStore(System.IO.Path.Combine(Application.persistentDataPath, "story-quicksave.json"))),
+                TextSpeed = textSpeed,
             };
+            Backlog.Capacity = backlogCapacity;
             presenter.OnEffects   += effects => AttributesChanged?.Invoke(effects);
             presenter.OnItems     += (items, target) => ItemsConsumed?.Invoke(items, target);
             presenter.OnUnlocks   += keys => FeaturesUnlocked?.Invoke(keys);
@@ -142,6 +155,7 @@ namespace StoryRuntime.UI {
             while (_presenter == presenter && presenter.IsPlaying) yield return null;
 
             if (presenter.State?.Status == PlayerStatus.Error) LastError = presenter.State.Error;
+            textSpeed = (float)presenter.TextSpeed;
             presenter.Dispose();
             if (_presenter == presenter) {
                 _presenter = null;
