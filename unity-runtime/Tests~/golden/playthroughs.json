@@ -5,7 +5,7 @@
       "name": "線性推進到結束",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -90,6 +90,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -102,6 +104,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -115,6 +119,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -128,6 +134,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         }
       ]
@@ -136,7 +144,7 @@
       "name": "選左邊",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -252,6 +260,8 @@
             "c1",
             "c2"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -264,6 +274,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -277,6 +289,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         }
       ]
@@ -285,7 +299,7 @@
       "name": "選右邊",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -401,6 +415,8 @@
             "c1",
             "c2"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -413,6 +429,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -426,6 +444,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         }
       ]
@@ -434,7 +454,7 @@
       "name": "選了不存在的選項",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -547,6 +567,8 @@
             "c1",
             "c2"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -561,6 +583,8 @@
             "c1",
             "c2"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {}
         }
       ]
@@ -569,7 +593,7 @@
       "name": "分支走高值",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -687,6 +711,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -706,6 +732,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -720,7 +748,7 @@
       "name": "分支走低值",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -838,6 +866,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -857,6 +887,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -871,7 +903,7 @@
       "name": "分支邊界值 74",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -989,6 +1021,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -1008,6 +1042,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -1022,7 +1058,7 @@
       "name": "沒有條件成立",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1115,6 +1151,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -1133,6 +1171,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "composure": {
               "type": "number",
@@ -1147,7 +1187,7 @@
       "name": "輸入與賦值",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1271,6 +1311,8 @@
             "playerAge"
           ],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "firstName": {
               "type": "string",
@@ -1301,6 +1343,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "firstName": {
               "type": "string",
@@ -1331,6 +1375,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "firstName": {
               "type": "string",
@@ -1355,7 +1401,7 @@
       "name": "數字型別的輸入不吃前導零",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1476,6 +1522,8 @@
             "playerAge"
           ],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "firstName": {
               "type": "string",
@@ -1506,6 +1554,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "firstName": {
               "type": "string",
@@ -1530,7 +1580,7 @@
       "name": "解鎖條件不成立的選項不出現",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1649,6 +1699,8 @@
             "free",
             "blank"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -1672,6 +1724,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -1691,7 +1745,7 @@
       "name": "解鎖條件成立的選項出現並可選",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1823,6 +1877,8 @@
             "key",
             "blank"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -1846,6 +1902,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -1865,7 +1923,7 @@
       "name": "選了被鎖住的選項",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -1991,6 +2049,8 @@
             "warm",
             "blank"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -2017,6 +2077,8 @@
             "warm",
             "blank"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -2036,7 +2098,7 @@
       "name": "所有選項都被鎖住",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2117,6 +2179,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -2131,7 +2195,7 @@
       "name": "解鎖條件在抵達時才判斷",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2240,6 +2304,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -2262,6 +2328,8 @@
             "plain",
             "warm"
           ],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -2281,6 +2349,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "affection": {
               "type": "number",
@@ -2295,7 +2365,7 @@
       "name": "解鎖條件語法錯誤",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2362,6 +2432,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         }
       ]
@@ -2370,7 +2442,7 @@
       "name": "解鎖條件用到未定義的變數",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2437,7 +2509,663 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
+        }
+      ]
+    },
+    {
+      "name": "演出：進場、控制列、分支與選項的屬性變化",
+      "project": {
+        "meta": {
+          "formatVersion": "1.5.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "trust",
+            "type": "number",
+            "default": 0,
+            "description": "",
+            "label": "信任"
+          },
+          {
+            "id": "motivation",
+            "type": "number",
+            "default": 0,
+            "description": "",
+            "label": "幹勁"
+          },
+          {
+            "id": "mood",
+            "type": "string",
+            "default": "普通",
+            "description": "",
+            "label": "心情"
+          },
+          {
+            "id": "score",
+            "type": "number",
+            "default": 0,
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "open",
+            "nodes": [
+              {
+                "id": "open",
+                "kind": "line",
+                "text": {
+                  "zh": "open"
+                },
+                "choices": [],
+                "next": "calc",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "stage": {
+                  "background": "店內-白天",
+                  "screenEffect": "睜眼效果",
+                  "attributes": "信任+1"
+                }
+              },
+              {
+                "id": "calc",
+                "kind": "set",
+                "text": {
+                  "zh": "calc"
+                },
+                "choices": [],
+                "next": "gate",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "score = trust * 10",
+                "stage": {
+                  "sfx": "門鈴"
+                }
+              },
+              {
+                "id": "gate",
+                "kind": "branch",
+                "text": {
+                  "zh": "gate"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [
+                  {
+                    "id": "b1",
+                    "condition": "trust >= 1",
+                    "targetNodeId": "ask",
+                    "stage": {
+                      "attributes": "幹勁+2"
+                    },
+                    "extras": {}
+                  },
+                  {
+                    "id": "b2",
+                    "condition": "trust < 1",
+                    "targetNodeId": "ask",
+                    "extras": {}
+                  }
+                ],
+                "extras": {}
+              },
+              {
+                "id": "ask",
+                "kind": "line",
+                "text": {
+                  "zh": "ask"
+                },
+                "choices": [
+                  {
+                    "id": "c1",
+                    "text": {
+                      "zh": "先試做拿鐵"
+                    },
+                    "targetNodeId": "end",
+                    "stage": {
+                      "attributes": "信任-1，未知+1，心情+1",
+                      "target": "新人",
+                      "sfx": "杯子"
+                    },
+                    "extras": {}
+                  },
+                  {
+                    "id": "c2",
+                    "text": {
+                      "zh": "先整理吧台"
+                    },
+                    "targetNodeId": "end",
+                    "extras": {}
+                  }
+                ],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "end",
+                "kind": "end",
+                "text": {
+                  "zh": "end"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "stage": {
+                  "bgm": "停止 2"
+                }
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "advance"
+        ],
+        [
+          "choose",
+          "c1"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "open",
+          "error": null,
+          "visited": [
+            "open"
+          ],
+          "pendingInputs": [],
+          "availableChoices": [],
+          "cues": [
+            "node:open"
+          ],
+          "effects": [
+            {
+              "name": "信任",
+              "delta": 1,
+              "variable": "trust",
+              "target": null
+            }
+          ],
+          "variables": {
+            "mood": {
+              "type": "string",
+              "value": "普通",
+              "display": "普通"
+            },
+            "motivation": {
+              "type": "number",
+              "value": 0,
+              "display": "0"
+            },
+            "score": {
+              "type": "number",
+              "value": 0,
+              "display": "0"
+            },
+            "trust": {
+              "type": "number",
+              "value": 1,
+              "display": "1"
+            }
+          }
+        },
+        {
+          "status": "choices",
+          "nodeId": "ask",
+          "error": null,
+          "visited": [
+            "open",
+            "calc",
+            "gate",
+            "ask"
+          ],
+          "pendingInputs": [],
+          "availableChoices": [
+            "c1",
+            "c2"
+          ],
+          "cues": [
+            "node:calc",
+            "branch:b1"
+          ],
+          "effects": [
+            {
+              "name": "幹勁",
+              "delta": 2,
+              "variable": "motivation",
+              "target": null
+            }
+          ],
+          "variables": {
+            "mood": {
+              "type": "string",
+              "value": "普通",
+              "display": "普通"
+            },
+            "motivation": {
+              "type": "number",
+              "value": 2,
+              "display": "2"
+            },
+            "score": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            },
+            "trust": {
+              "type": "number",
+              "value": 1,
+              "display": "1"
+            }
+          }
+        },
+        {
+          "status": "ended",
+          "nodeId": "end",
+          "error": null,
+          "visited": [
+            "open",
+            "calc",
+            "gate",
+            "ask",
+            "end"
+          ],
+          "pendingInputs": [],
+          "availableChoices": [],
+          "cues": [
+            "choice:c1",
+            "node:end"
+          ],
+          "effects": [
+            {
+              "name": "信任",
+              "delta": -1,
+              "variable": "trust",
+              "target": "新人"
+            },
+            {
+              "name": "未知",
+              "delta": 1,
+              "variable": null,
+              "target": "新人"
+            },
+            {
+              "name": "心情",
+              "delta": 1,
+              "variable": null,
+              "target": "新人"
+            }
+          ],
+          "variables": {
+            "mood": {
+              "type": "string",
+              "value": "普通",
+              "display": "普通"
+            },
+            "motivation": {
+              "type": "number",
+              "value": 2,
+              "display": "2"
+            },
+            "score": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            },
+            "trust": {
+              "type": "number",
+              "value": 0,
+              "display": "0"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "演出：沒有演出的選項不留 cue",
+      "project": {
+        "meta": {
+          "formatVersion": "1.5.0",
+          "projectName": "走訪測資",
+          "languages": [
+            "zh"
+          ],
+          "baseLanguage": "zh",
+          "updatedAt": "",
+          "tagSyntax": "brace"
+        },
+        "tagRegistry": [],
+        "variables": [
+          {
+            "id": "trust",
+            "type": "number",
+            "default": 0,
+            "description": "",
+            "label": "信任"
+          },
+          {
+            "id": "motivation",
+            "type": "number",
+            "default": 0,
+            "description": "",
+            "label": "幹勁"
+          },
+          {
+            "id": "mood",
+            "type": "string",
+            "default": "普通",
+            "description": "",
+            "label": "心情"
+          },
+          {
+            "id": "score",
+            "type": "number",
+            "default": 0,
+            "description": ""
+          }
+        ],
+        "characters": [],
+        "scenes": [
+          {
+            "id": "scene",
+            "name": "測試",
+            "entryNodeId": "open",
+            "nodes": [
+              {
+                "id": "open",
+                "kind": "line",
+                "text": {
+                  "zh": "open"
+                },
+                "choices": [],
+                "next": "calc",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "stage": {
+                  "background": "店內-白天",
+                  "screenEffect": "睜眼效果",
+                  "attributes": "信任+1"
+                }
+              },
+              {
+                "id": "calc",
+                "kind": "set",
+                "text": {
+                  "zh": "calc"
+                },
+                "choices": [],
+                "next": "gate",
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "expression": "score = trust * 10",
+                "stage": {
+                  "sfx": "門鈴"
+                }
+              },
+              {
+                "id": "gate",
+                "kind": "branch",
+                "text": {
+                  "zh": "gate"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [
+                  {
+                    "id": "b1",
+                    "condition": "trust >= 1",
+                    "targetNodeId": "ask",
+                    "stage": {
+                      "attributes": "幹勁+2"
+                    },
+                    "extras": {}
+                  },
+                  {
+                    "id": "b2",
+                    "condition": "trust < 1",
+                    "targetNodeId": "ask",
+                    "extras": {}
+                  }
+                ],
+                "extras": {}
+              },
+              {
+                "id": "ask",
+                "kind": "line",
+                "text": {
+                  "zh": "ask"
+                },
+                "choices": [
+                  {
+                    "id": "c1",
+                    "text": {
+                      "zh": "先試做拿鐵"
+                    },
+                    "targetNodeId": "end",
+                    "stage": {
+                      "attributes": "信任-1，未知+1，心情+1",
+                      "target": "新人",
+                      "sfx": "杯子"
+                    },
+                    "extras": {}
+                  },
+                  {
+                    "id": "c2",
+                    "text": {
+                      "zh": "先整理吧台"
+                    },
+                    "targetNodeId": "end",
+                    "extras": {}
+                  }
+                ],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {}
+              },
+              {
+                "id": "end",
+                "kind": "end",
+                "text": {
+                  "zh": "end"
+                },
+                "choices": [],
+                "next": null,
+                "actions": [],
+                "notes": "",
+                "branches": [],
+                "extras": {},
+                "stage": {
+                  "bgm": "停止 2"
+                }
+              }
+            ]
+          }
+        ],
+        "exportSnapshot": null
+      },
+      "sceneId": "scene",
+      "initialVariables": {},
+      "steps": [
+        [
+          "advance"
+        ],
+        [
+          "choose",
+          "c2"
+        ]
+      ],
+      "snapshots": [
+        {
+          "status": "line",
+          "nodeId": "open",
+          "error": null,
+          "visited": [
+            "open"
+          ],
+          "pendingInputs": [],
+          "availableChoices": [],
+          "cues": [
+            "node:open"
+          ],
+          "effects": [
+            {
+              "name": "信任",
+              "delta": 1,
+              "variable": "trust",
+              "target": null
+            }
+          ],
+          "variables": {
+            "mood": {
+              "type": "string",
+              "value": "普通",
+              "display": "普通"
+            },
+            "motivation": {
+              "type": "number",
+              "value": 0,
+              "display": "0"
+            },
+            "score": {
+              "type": "number",
+              "value": 0,
+              "display": "0"
+            },
+            "trust": {
+              "type": "number",
+              "value": 1,
+              "display": "1"
+            }
+          }
+        },
+        {
+          "status": "choices",
+          "nodeId": "ask",
+          "error": null,
+          "visited": [
+            "open",
+            "calc",
+            "gate",
+            "ask"
+          ],
+          "pendingInputs": [],
+          "availableChoices": [
+            "c1",
+            "c2"
+          ],
+          "cues": [
+            "node:calc",
+            "branch:b1"
+          ],
+          "effects": [
+            {
+              "name": "幹勁",
+              "delta": 2,
+              "variable": "motivation",
+              "target": null
+            }
+          ],
+          "variables": {
+            "mood": {
+              "type": "string",
+              "value": "普通",
+              "display": "普通"
+            },
+            "motivation": {
+              "type": "number",
+              "value": 2,
+              "display": "2"
+            },
+            "score": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            },
+            "trust": {
+              "type": "number",
+              "value": 1,
+              "display": "1"
+            }
+          }
+        },
+        {
+          "status": "ended",
+          "nodeId": "end",
+          "error": null,
+          "visited": [
+            "open",
+            "calc",
+            "gate",
+            "ask",
+            "end"
+          ],
+          "pendingInputs": [],
+          "availableChoices": [],
+          "cues": [
+            "node:end"
+          ],
+          "effects": [],
+          "variables": {
+            "mood": {
+              "type": "string",
+              "value": "普通",
+              "display": "普通"
+            },
+            "motivation": {
+              "type": "number",
+              "value": 2,
+              "display": "2"
+            },
+            "score": {
+              "type": "number",
+              "value": 10,
+              "display": "10"
+            },
+            "trust": {
+              "type": "number",
+              "value": 1,
+              "display": "1"
+            }
+          }
         }
       ]
     },
@@ -2445,7 +3173,7 @@
       "name": "跳轉指向不存在的節點",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -2498,6 +3226,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         },
         {
@@ -2509,6 +3239,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         }
       ]
@@ -2517,7 +3249,7 @@
       "name": "無限迴圈會被擋下",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -3573,6 +4305,8 @@
           ],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {
             "n": {
               "type": "number",
@@ -3587,7 +4321,7 @@
       "name": "找不到場景",
       "project": {
         "meta": {
-          "formatVersion": "1.4.0",
+          "formatVersion": "1.5.0",
           "projectName": "走訪測資",
           "languages": [
             "zh"
@@ -3660,6 +4394,8 @@
           "visited": [],
           "pendingInputs": [],
           "availableChoices": [],
+          "cues": [],
+          "effects": [],
           "variables": {}
         }
       ]

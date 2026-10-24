@@ -1,4 +1,4 @@
-import type { NodeKind } from '../schema/story';
+import type { NodeKind, StageField } from '../schema/story';
 
 /**
  * 既有劇本表格的格式定義。
@@ -54,10 +54,36 @@ export const COLUMN_ALIASES = {
 
 export type SemanticColumn = keyof typeof COLUMN_ALIASES;
 
-/** 所有有語意的欄名（含同義字），用來判斷一個欄位是否該進 extras。 */
-export const SEMANTIC_HEADERS = new Set<string>(
-  Object.values(COLUMN_ALIASES).flatMap((names) => [...names]),
-);
+/**
+ * 演出欄位（1.5.0）：欄名 → node.stage 的欄位。同義欄名列在一起，第一個是預設欄名
+ * （新表一律叫「背景」，舊表有的叫「場景」）。立繪另有 node.portrait，不在這裡。
+ */
+export const STAGE_COLUMNS: Record<StageField, readonly string[]> = {
+  background: ['背景', '場景'],
+  position: ['位置'],
+  portraitEffect: ['立繪效果'],
+  cg: ['插圖'],
+  screenEffect: ['畫面效果'],
+  sfx: ['效果音'],
+  bgm: ['OST'],
+  attributes: ['屬性變化'],
+  items: ['物品消耗'],
+  unlocks: ['功能解鎖'],
+  target: ['作用目標'],
+};
+
+export const STAGE_FIELDS = Object.keys(STAGE_COLUMNS) as StageField[];
+
+/** 欄名 → 演出欄位；不是演出欄位就回傳 undefined。 */
+export function stageFieldOf(header: string): StageField | undefined {
+  return STAGE_FIELDS.find((field) => STAGE_COLUMNS[field].includes(header));
+}
+
+/** 所有有語意的欄名（含同義字與演出欄位），用來判斷一個欄位是否該進 extras。 */
+export const SEMANTIC_HEADERS = new Set<string>([
+  ...Object.values(COLUMN_ALIASES).flatMap((names) => [...names]),
+  ...Object.values(STAGE_COLUMNS).flatMap((names) => [...names]),
+]);
 
 /**
  * 匯出時的預設欄位順序。

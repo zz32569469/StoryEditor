@@ -1,0 +1,498 @@
+{
+  "version": 1,
+  "directives": [
+    {
+      "stage": {},
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "background": "店內-白天"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [],
+        "background": {
+          "key": "店內-白天"
+        }
+      }
+    },
+    {
+      "stage": {
+        "background": "無",
+        "cg": "cg-開幕準備"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [],
+        "background": {
+          "key": null
+        },
+        "cg": {
+          "key": "cg-開幕準備"
+        }
+      }
+    },
+    {
+      "stage": {
+        "cg": "無"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [],
+        "cg": {
+          "key": null
+        }
+      }
+    },
+    {
+      "stage": {
+        "background": "兩個 代號"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [
+          "背景「兩個 代號」只能寫一個代號"
+        ],
+        "background": {
+          "key": "兩個 代號"
+        }
+      }
+    },
+    {
+      "stage": {
+        "screenEffect": "睜眼效果"
+      },
+      "parsed": {
+        "screen": [
+          {
+            "name": "睜眼",
+            "args": [
+              1.2
+            ]
+          }
+        ],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "screenEffect": "睜眼 1.5，震動 0.2 2，閃白，黑幕"
+      },
+      "parsed": {
+        "screen": [
+          {
+            "name": "睜眼",
+            "args": [
+              1.5
+            ]
+          },
+          {
+            "name": "震動",
+            "args": [
+              0.2,
+              2
+            ]
+          },
+          {
+            "name": "閃白",
+            "args": [
+              0.2
+            ]
+          },
+          {
+            "name": "黑幕",
+            "args": []
+          }
+        ],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "screenEffect": "淡出 1, 淡入 0.25 ，溶接 0.8，閉眼"
+      },
+      "parsed": {
+        "screen": [
+          {
+            "name": "淡出",
+            "args": [
+              1
+            ]
+          },
+          {
+            "name": "淡入",
+            "args": [
+              0.25
+            ]
+          },
+          {
+            "name": "溶接",
+            "args": [
+              0.8
+            ]
+          },
+          {
+            "name": "閉眼",
+            "args": [
+              1
+            ]
+          }
+        ],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "screenEffect": "OpenNameInput，OpenBirthdayInput"
+      },
+      "parsed": {
+        "screen": [
+          {
+            "name": "input",
+            "args": [],
+            "key": "Name"
+          },
+          {
+            "name": "input",
+            "args": [],
+            "key": "Birthday"
+          }
+        ],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "screenEffect": "轉圈，淡入 1 2，震動 快，淡出 0.4"
+      },
+      "parsed": {
+        "screen": [
+          {
+            "name": "淡出",
+            "args": [
+              0.4
+            ]
+          }
+        ],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [
+          "畫面效果「轉圈」不認得（可用：睜眼、閉眼、黑幕、淡出、淡入、溶接、震動、閃白）",
+          "畫面效果「淡入 1 2」參數太多，淡入最多 1 個",
+          "畫面效果「震動 快」的參數「快」不是數字"
+        ]
+      }
+    },
+    {
+      "stage": {
+        "sfx": "門鈴，杯子, 腳步聲"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [
+          "門鈴",
+          "杯子",
+          "腳步聲"
+        ],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "bgm": "早晨的店"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [],
+        "bgm": {
+          "key": "早晨的店",
+          "fade": 1
+        }
+      }
+    },
+    {
+      "stage": {
+        "bgm": "早晨的店 2.5"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [],
+        "bgm": {
+          "key": "早晨的店",
+          "fade": 2.5
+        }
+      }
+    },
+    {
+      "stage": {
+        "bgm": "停止 1"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [],
+        "bgm": {
+          "key": null,
+          "fade": 1
+        }
+      }
+    },
+    {
+      "stage": {
+        "bgm": "早晨 慢 一點"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [
+          "OST「早晨 慢 一點」只能寫「代號 秒數」或「停止 秒數」",
+          "OST「早晨 慢 一點」的秒數「慢」不是數字"
+        ],
+        "bgm": {
+          "key": "早晨",
+          "fade": 1
+        }
+      }
+    },
+    {
+      "stage": {
+        "attributes": "信任+1，幹勁-1"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [
+          {
+            "name": "信任",
+            "delta": 1
+          },
+          {
+            "name": "幹勁",
+            "delta": -1
+          }
+        ],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "attributes": " 親切度EXP + 3 , 幹勁－2，信任＋1 "
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [
+          {
+            "name": "親切度EXP",
+            "delta": 3
+          },
+          {
+            "name": "幹勁",
+            "delta": -2
+          },
+          {
+            "name": "信任",
+            "delta": 1
+          }
+        ],
+        "items": [],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "attributes": "信任1，幹勁+"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [
+          "屬性變化「信任1」看不懂，寫法是「名稱±數字」，多個用「，」分隔",
+          "屬性變化「幹勁+」看不懂，寫法是「名稱±數字」，多個用「，」分隔"
+        ]
+      }
+    },
+    {
+      "stage": {
+        "items": "咖啡豆×2，紙杯，牛奶x3，糖*1"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [
+          {
+            "key": "咖啡豆",
+            "count": 2
+          },
+          {
+            "key": "紙杯",
+            "count": 1
+          },
+          {
+            "key": "牛奶",
+            "count": 3
+          },
+          {
+            "key": "糖",
+            "count": 1
+          }
+        ],
+        "unlocks": [],
+        "issues": []
+      }
+    },
+    {
+      "stage": {
+        "items": "咖啡豆×，兩 包"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [],
+        "issues": [
+          "物品消耗「咖啡豆×」寫法是「代號×數量」",
+          "物品消耗「兩 包」寫法是「代號×數量」"
+        ]
+      }
+    },
+    {
+      "stage": {
+        "unlocks": "咖啡機，收銀台",
+        "target": "新人"
+      },
+      "parsed": {
+        "screen": [],
+        "sfx": [],
+        "attributes": [],
+        "items": [],
+        "unlocks": [
+          "咖啡機",
+          "收銀台"
+        ],
+        "issues": [],
+        "target": "新人"
+      }
+    },
+    {
+      "stage": {
+        "background": "店門口",
+        "cg": "無",
+        "screenEffect": "淡入 1",
+        "sfx": "門鈴",
+        "bgm": "早晨的店 2",
+        "attributes": "信任+1",
+        "items": "紙杯",
+        "unlocks": "吧台",
+        "target": "店長"
+      },
+      "parsed": {
+        "screen": [
+          {
+            "name": "淡入",
+            "args": [
+              1
+            ]
+          }
+        ],
+        "sfx": [
+          "門鈴"
+        ],
+        "attributes": [
+          {
+            "name": "信任",
+            "delta": 1
+          }
+        ],
+        "items": [
+          {
+            "key": "紙杯",
+            "count": 1
+          }
+        ],
+        "unlocks": [
+          "吧台"
+        ],
+        "issues": [],
+        "background": {
+          "key": "店門口"
+        },
+        "cg": {
+          "key": null
+        },
+        "bgm": {
+          "key": "早晨的店",
+          "fade": 2
+        },
+        "target": "店長"
+      }
+    }
+  ]
+}

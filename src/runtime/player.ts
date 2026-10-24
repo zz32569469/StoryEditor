@@ -7,7 +7,9 @@ import {
   type Value,
 } from '../expr/evaluate';
 import { parseAssignment, parseExpression, parseInputTargets } from '../expr/parse';
-import type { Scene, StoryNode, StoryProject } from '../schema/story';
+import type { Scene, Stage, StoryNode, StoryProject } from '../schema/story';
+import { attributeTable } from '../stage/attributes';
+import { isEmptyStage, parseStage } from '../stage/directives';
 
 /**
  * 劇情播放器。
@@ -49,6 +51,25 @@ export interface PlayerState {
   error: string | null;
   /** 走過的節點，用來偵測無限迴圈。 */
   visited: string[];
+  /**
+   * 這一步（一次 start／advance／choose／submitInput）經過、且有演出欄位的節點／選項／分支，依序。
+   * 畫面層照這份清單依序執行背景、插圖、畫面效果、音效…；控制列（set／if）上的演出也在裡面。
+   */
+  cues: Cue[];
+  /** 這一步套用的屬性變化，給遊戲接到自己的數值上。找不到變數的 variable 為 null（沒有套用）。 */
+  effects: AttributeEffect[];
+}
+
+export interface Cue {
+  kind: 'node' | 'choice' | 'branch';
+  id: string;
+}
+
+export interface AttributeEffect {
+  name: string;
+  delta: number;
+  variable: string | null;
+  target: string | null;
 }
 
 export interface PlayerOptions {
@@ -72,6 +93,48 @@ function fail(state: PlayerState, message: string): PlayerState {
   return { ...state, status: 'error', error: message };
 }
 
+/** 每一步開始時清空：cues／effects 只描述「這一步」發生的事。 */
+function beginStep(state: PlayerState): PlayerState {
+  return { ...state, cues: [], effects: [] };
+}
+
+/**
+ * 進入一列（或選了選項、走了分支）時的演出：記下 cue，並套用屬性變化。
+ *
+ * 屬性變化在走訪當下就套用，所以同一次推進中緊接的 if 看得到新值。
+ * 名稱照變數的 label（屬性清單）找，找不到就只記下 effect、不改任何變數 ——
+ * 劇本檢查會把那一處列出來，播放時不該因此停下。
+ */
+function enter(
+  state: PlayerState,
+  project: StoryProject,
+  kind: Cue['kind'],
+  id: string,
+  stage: Stage | undefined,
+): PlayerState {
+  if (isEmptyStage(stage)) return state;
+  const parsed = parseStage(stage);
+  const cues = [...state.cues, { kind, id }];
+  if (parsed.attributes.length === 0) return { ...state, cues };
+
+  const table = attributeTable(project.variables);
+  const variables = new Map(state.variables);
+  const effects = [...state.effects];
+  for (const change of parsed.attributes) {
+    const variable = table.get(change.name);
+    const current = variable ? variables.get(variable.id) : undefined;
+    const applied = variable?.type === 'number' && (current === undefined || typeof current === 'number');
+    if (applied) variables.set(variable.id, (current ?? 0) + change.delta);
+    effects.push({
+      name: change.name,
+      delta: change.delta,
+      variable: applied ? variable.id : null,
+      target: parsed.target ?? null,
+    });
+  }
+  return { ...state, cues, effects, variables };
+}
+
 function nodeOf(scene: Scene, nodeId: string | null): StoryNode | undefined {
   return scene.nodes.find((n) => n.id === nodeId);
 }
@@ -82,7 +145,12 @@ function nodeOf(scene: Scene, nodeId: string | null): StoryNode | undefined {
  * branch / set 這類流程控制節點不需要玩家介入，會連續處理完；
  * 停下來的一定是台詞、選項、輸入、結束或錯誤。
  */
-function settle(state: PlayerState, scene: Scene, options: PlayerOptions): PlayerState {
+function settle(
+  state: PlayerState,
+  project: StoryProject,
+  scene: Scene,
+  options: PlayerOptions,
+): PlayerState {
   let current: PlayerState = { ...state, availableChoices: [] };
 
   for (let step = 0; step < MAX_STEPS; step += 1) {
@@ -92,6 +160,7 @@ function settle(state: PlayerState, scene: Scene, options: PlayerOptions): Playe
     if (!node) return fail(current, `找不到節點 ${current.nodeId}`);
 
     current = { ...current, visited: [...current.visited, node.id] };
+    current = enter(current, project, 'node', node.id, node.stage);
 
     switch (node.kind) {
       case 'end':
@@ -146,6 +215,7 @@ function settle(state: PlayerState, scene: Scene, options: PlayerOptions): Playe
 
       case 'branch': {
         let taken: string | null | undefined;
+        let takenBranch: (typeof node.branches)[number] | undefined;
         for (const branch of node.branches) {
           const parsed = parseExpression(branch.condition);
           if (!parsed.ok) {
@@ -155,6 +225,7 @@ function settle(state: PlayerState, scene: Scene, options: PlayerOptions): Playe
           if (!result.ok) return fail(current, `條件「${branch.condition}」：${result.message}`);
           if (truthy(result.value)) {
             taken = branch.targetNodeId;
+            takenBranch = branch;
             break;
           }
         }
@@ -165,6 +236,7 @@ function settle(state: PlayerState, scene: Scene, options: PlayerOptions): Playe
             `分支沒有任何條件成立：${node.branches.map((b) => b.condition).join('、')}`,
           );
         }
+        current = enter(current, project, 'branch', takenBranch!.id, takenBranch!.stage);
         current = { ...current, nodeId: taken };
         continue;
       }
@@ -189,6 +261,8 @@ export function startScene(
     availableChoices: [],
     error: null,
     visited: [],
+    cues: [],
+    effects: [],
   };
 
   if (!scene) return fail(initial, `找不到場景 ${sceneId}`);
@@ -200,7 +274,7 @@ export function startScene(
     variables.set(key, value);
   }
 
-  return settle({ ...initial, variables }, scene, options);
+  return settle({ ...initial, variables }, project, scene, options);
 }
 
 /** 從台詞往下一句。 */
@@ -216,7 +290,7 @@ export function advance(
   const node = nodeOf(scene, state.nodeId);
   if (!node) return fail(state, `找不到節點 ${state.nodeId}`);
 
-  return settle({ ...state, nodeId: node.next }, scene, options);
+  return settle({ ...beginStep(state), nodeId: node.next }, project, scene, options);
 }
 
 export function choose(
@@ -236,7 +310,8 @@ export function choose(
     return fail(state, `選項 ${choiceId} 的條件不成立，不能選`);
   }
 
-  return settle({ ...state, nodeId: choice.targetNodeId }, scene, options);
+  const chosen = enter(beginStep(state), project, 'choice', choice.id, choice.stage);
+  return settle({ ...chosen, nodeId: choice.targetNodeId }, project, scene, options);
 }
 
 export function submitInput(
@@ -278,7 +353,8 @@ export function submitInput(
   }
 
   return settle(
-    { ...state, variables, pendingInputs: [], nodeId: node.next },
+    { ...beginStep(state), variables, pendingInputs: [], nodeId: node.next },
+    project,
     scene,
     options,
   );

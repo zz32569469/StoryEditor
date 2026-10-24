@@ -158,16 +158,19 @@ describe('匯入既有劇本格式', () => {
     expect(Object.keys(result)).toContain('CH-1-待寫');
   });
 
-  it('保留立繪的中文命名與未支援的製作欄位', async () => {
+  it('保留立繪的中文命名，演出欄位進 stage、其餘製作欄位留在 extras', async () => {
     const { project } = await importLegacyWorkbook(await makeWorkbook(SAMPLE), '測試');
     const nodes = project.scenes[0]!.nodes;
 
     expect(nodes.find((n) => n.source?.id === '6')!.portrait).toBe('便服-微笑');
-    expect(nodes.find((n) => n.source?.id === '5')!.extras).toEqual({ 場景: '大廳' });
-    expect(nodes.find((n) => n.source?.id === '7')!.extras).toEqual({ 畫面效果: 'OpenDateInput' });
-    // 群組成員各自的製作欄位掛在該成員上，不會互相污染。
+    // 舊表的「場景」與新表的「背景」同義
+    expect(nodes.find((n) => n.source?.id === '5')!.stage).toEqual({ background: '大廳' });
+    expect(nodes.find((n) => n.source?.id === '7')!.stage).toEqual({ screenEffect: 'OpenDateInput' });
+    expect(nodes.find((n) => n.source?.id === '7')!.extras).toEqual({});
+    // 群組成員各自的演出掛在該成員上，不會互相污染。
     const branch = nodes.find((n) => n.kind === 'branch')!;
-    expect(branch.branches.map((b) => b.extras)).toEqual([{}, { 屬性變化: 'courage+1' }]);
+    expect(branch.branches.map((b) => b.stage)).toEqual([undefined, { attributes: 'courage+1' }]);
+    expect(branch.stage).toBeUndefined();
   });
 
   it('對話 hub：兩個節點跳進同一組選項，選項只有一份', async () => {
@@ -428,5 +431,38 @@ describe('選項解鎖條件', () => {
     const result = await readWorkbook(await (await exportLegacyWorkbook(project)).blob.arrayBuffer());
     const row = result['CH-0-序章']!.find((r) => r['ID'] === '2')!;
     expect(row['選項解鎖']).toBe('courage > 1');
+  });
+});
+
+describe('中文人物名稱', () => {
+  const sheet = {
+    'CH-1': [
+      { 標誌: '#', ID: '0', 人物: '店長', 內容: '早安。', 跳轉: '1' },
+      { 標誌: '#', ID: '1', 人物: '新人', 內容: '請多指教！', 跳轉: '2' },
+      { 標誌: '#', ID: '2', 人物: 'mc os', 內容: '（好緊張。）', 跳轉: '3' },
+      { 標誌: '#', ID: '3', 人物: '店長', 內容: '那就開始吧。', 跳轉: '' },
+    ],
+  };
+
+  it('不同的中文名稱各自配發 id，不再全部合成 unknown', async () => {
+    const { project } = await importLegacyWorkbook(await makeWorkbook(sheet), '測試');
+    expect(project.characters.map((c) => [c.id, c.name.zh])).toEqual([
+      ['char-1', '店長'],
+      ['char-2', '新人'],
+      ['mc_os', 'mc os'],
+    ]);
+    expect(project.scenes[0]!.nodes.map((n) => n.speaker)).toEqual(['char-1', 'char-2', 'mc_os', 'char-1']);
+  });
+
+  it('重新匯入時用名稱對回原本的 id，新角色接著配號', async () => {
+    const { project } = await importLegacyWorkbook(await makeWorkbook(sheet), '測試');
+    const more = { 'CH-1': [{ 標誌: '#', ID: '9', 人物: '熟客', 內容: '開了嗎？', 跳轉: '0' }, ...sheet['CH-1']] };
+    const { project: again } = await importLegacyWorkbook(await makeWorkbook(more), '測試', project);
+    expect(again.characters.map((c) => [c.id, c.name.zh])).toEqual([
+      ['char-3', '熟客'],
+      ['char-1', '店長'],
+      ['char-2', '新人'],
+      ['mc_os', 'mc os'],
+    ]);
   });
 });

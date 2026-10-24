@@ -8,11 +8,19 @@ import type {
   Character,
   Choice,
   Scene,
+  Stage,
   StoryNode,
   StoryProject,
 } from '../schema/story';
 import type { TagSyntax } from '../schema/tags';
-import { COLUMN_ALIASES, SEMANTIC_HEADERS, findColumn, toMarker, type Marker } from './format';
+import {
+  COLUMN_ALIASES,
+  SEMANTIC_HEADERS,
+  findColumn,
+  stageFieldOf,
+  toMarker,
+  type Marker,
+} from './format';
 
 /**
  * 把既有劇本表格轉成專案。
@@ -47,6 +55,8 @@ interface RawRow {
   jump: string;
   /** 選項解鎖條件；只有 q 列會有值。 */
   unlock: string;
+  /** 演出欄位原文（背景、插圖、畫面效果…），沒填的欄不出現。 */
+  stage: Stage | undefined;
   /** 標誌欄的原值，`` 與 `#` 都是台詞但要分辨才能原樣寫回。 */
   markerRaw: string;
   extras: Record<string, string>;
@@ -60,6 +70,36 @@ function toCharacterId(label: string): string {
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
   return id || 'unknown';
+}
+
+/**
+ * 人物標籤 → 角色 id。
+ *
+ * 英數標籤照舊轉成 key（「mc os」→ mc_os）。含中文的標籤（店長、新人）轉不出 key，
+ * 以前全部變成同一個 `unknown`，兩個角色就合成一個人；改成依出現順序配發 char-1、char-2…，
+ * 顯示名稱保留原字。重新匯入時用名稱對回前一份專案的角色，id 不會變。
+ */
+function characterIds(previous: StoryProject | null | undefined): (label: string) => string {
+  const byLabel = new Map<string, string>();
+  const taken = new Set<string>();
+  for (const character of previous?.characters ?? []) {
+    taken.add(character.id);
+    for (const name of Object.values(character.name)) byLabel.set(name.trim(), character.id);
+  }
+  let next = 1;
+  return (label: string) => {
+    const trimmed = label.trim();
+    const known = byLabel.get(trimmed);
+    if (known) return known;
+    let id = toCharacterId(trimmed);
+    if (/[^ -~]/.test(trimmed) || id === 'unknown') {
+      while (taken.has(`char-${next}`)) next += 1;
+      id = `char-${next}`;
+    }
+    taken.add(id);
+    byLabel.set(trimmed, id);
+    return id;
+  };
 }
 
 function readHeaders(sheet: Worksheet): string[] {
@@ -90,6 +130,11 @@ function readRows(sheet: Worksheet, headers: string[], warnings: string[]): RawR
     }
     return [];
   }
+
+  // 演出欄位：同一個欄位若有兩種欄名同時出現，取第一個有值的
+  const stageCols = headers
+    .map((name, index) => ({ field: stageFieldOf(name), index: index + 1 }))
+    .filter((c): c is { field: NonNullable<typeof c.field>; index: number } => c.field !== undefined);
 
   // 有語意以外的欄位一律原樣保留。
   const extraCols = headers
@@ -135,11 +180,24 @@ function readRows(sheet: Worksheet, headers: string[], warnings: string[]): RawR
       content,
       jump: get(cols.jump),
       unlock,
+      stage: readStage(stageCols, get),
       extras,
     });
   }
 
   return rows;
+}
+
+function readStage(
+  cols: { field: keyof Stage; index: number }[],
+  get: (index: number) => string,
+): Stage | undefined {
+  const stage: Stage = {};
+  for (const col of cols) {
+    const value = get(col.index);
+    if (value && !stage[col.field]) stage[col.field] = value;
+  }
+  return Object.keys(stage).length > 0 ? stage : undefined;
 }
 
 /**
@@ -153,6 +211,7 @@ function convertSheet(
   headers: string[],
   rows: RawRow[],
   characters: Map<string, Character>,
+  characterIdOf: (label: string) => string,
   report: LegacyImportReport,
   reuse: IdReuse,
 ): Scene {
@@ -215,7 +274,7 @@ function convertSheet(
   const registerCharacter = (label: string): string | undefined => {
     // 空白與 narration 都是旁白 —— 編輯器用「沒有說話者」表示。
     if (!label || label.toLowerCase() === 'narration') return undefined;
-    const id = toCharacterId(label);
+    const id = characterIdOf(label);
     if (!characters.has(id)) characters.set(id, { id, name: { zh: label } });
     return id;
   };
@@ -253,6 +312,8 @@ function convertSheet(
       source: { id: leader.id, marker: leader.markerRaw, group: leader.group },
       sourceJump: leader.jump,
     };
+    // q／if 群組的演出跟著各個選項／分支走；其餘種類掛在節點上
+    const leaderStage = leader.stage ? { stage: leader.stage } : {};
 
     if (leader.marker === 'q') {
       // 每個選項各自記人物 —— 同一組裡「（不介入）」可能是 system 而非玩家。
@@ -264,6 +325,7 @@ function convertSheet(
         sourceId: member.id,
         sourceJump: member.jump,
         speaker: registerCharacter(member.person),
+        ...(member.stage ? { stage: member.stage } : {}),
         extras: member.extras,
       }));
       report.choices += choices.length;
@@ -280,6 +342,7 @@ function convertSheet(
         sourceId: member.id,
         sourceJump: member.jump,
         speaker: registerCharacter(member.person),
+        ...(member.stage ? { stage: member.stage } : {}),
         extras: member.extras,
       }));
       report.branches += branches.length;
@@ -290,6 +353,7 @@ function convertSheet(
     if (leader.marker === 'set' || leader.marker === 'in') {
       nodes.push({
         ...base,
+        ...leaderStage,
         kind: leader.marker === 'set' ? 'set' : 'input',
         expression: leader.content,
         next: resolveJump(leader.jump, leader),
@@ -298,12 +362,13 @@ function convertSheet(
     }
 
     if (leader.marker === 'end') {
-      nodes.push({ ...base, kind: 'end' });
+      nodes.push({ ...base, ...leaderStage, kind: 'end' });
       continue;
     }
 
     nodes.push({
       ...base,
+      ...leaderStage,
       kind: 'line',
       text: { zh: leader.content },
       // 立繪代號原樣保留（來源常用「便服-微笑」這類中文命名）。
@@ -414,6 +479,7 @@ export async function importLegacyWorkbook(
   const project = createEmptyProject(projectName, ['zh']);
   const reuse = reuseIdsFrom(previous);
   const characters = new Map<string, Character>();
+  const characterIdOf = characterIds(previous);
   const report: LegacyImportReport = {
     scenes: 0,
     rows: 0,
@@ -451,7 +517,7 @@ export async function importLegacyWorkbook(
       report.scenes += 1;
       continue;
     }
-    project.scenes.push(convertSheet(sheet.name, headers, rows, characters, report, reuse));
+    project.scenes.push(convertSheet(sheet.name, headers, rows, characters, characterIdOf, report, reuse));
     report.scenes += 1;
   }
 

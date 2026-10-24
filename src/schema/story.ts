@@ -13,8 +13,9 @@ import { TagRegistrySchema, TagSyntaxSchema } from './tags';
  * 1.3.0：變數型別新增 `date`（執行期仍是字串）。舊檔照讀；
  *        但含 date 的檔案給 1.2.0 以前的讀取端會失敗。
  * 1.4.0：變數新增選填的 `label`（屬性名稱），作為「屬性變化」欄的屬性清單。舊檔照讀。
+ * 1.5.0：node／choice／branch 新增 `stage`（演出欄位原文）；屬性變化由 runtime 套用。舊檔照讀。
  */
-export const FORMAT_VERSION = '1.4.0';
+export const FORMAT_VERSION = '1.5.0';
 
 /**
  * 多語系文字。key 為語言代碼，value 為含特效標記的字串。
@@ -57,6 +58,29 @@ export const SourceJumpSchema = z.string();
 
 /** 尚未有正式欄位的製作資訊，原樣保留。key 為來源表的欄名。 */
 export const ExtrasSchema = z.record(z.string(), z.string());
+
+/**
+ * 演出欄位（1.5.0）：劇本表的背景、插圖、畫面效果…各欄的**原文**。
+ *
+ * 存原文而不是解析結果，匯出才能一字不差地寫回；解析由網頁端（stage/directives.ts）
+ * 與 Unity 端各自實作，以黃金測資逐欄比對。寫法見 docs/FORMAT.md §3.5。
+ * 立繪沿用 node.portrait，不在這裡。
+ */
+export const StageSchema = z.object({
+  background: z.string().optional(),
+  position: z.string().optional(),
+  portraitEffect: z.string().optional(),
+  cg: z.string().optional(),
+  screenEffect: z.string().optional(),
+  sfx: z.string().optional(),
+  bgm: z.string().optional(),
+  attributes: z.string().optional(),
+  items: z.string().optional(),
+  unlocks: z.string().optional(),
+  target: z.string().optional(),
+});
+export type Stage = z.infer<typeof StageSchema>;
+export type StageField = keyof Stage;
 
 /**
  * 型別清單由運算式引擎提供，避免兩邊各維護一份而漂移。
@@ -124,6 +148,8 @@ export const ChoiceSchema = z.object({
    * 因此說話者掛在選項上，而非整組共用節點的說話者。
    */
   speaker: KeySchema.optional(),
+  /** 選了這個選項時生效的演出（例如屬性變化）。 */
+  stage: StageSchema.optional(),
   extras: ExtrasSchema.default({}),
 });
 export type Choice = z.infer<typeof ChoiceSchema>;
@@ -158,6 +184,8 @@ export const BranchSchema = z.object({
   sourceJump: SourceJumpSchema.optional(),
   /** 同一組的分支可以標不同人物，因此說話者掛在分支上而非節點上。 */
   speaker: KeySchema.optional(),
+  /** 走了這條分支時生效的演出。 */
+  stage: StageSchema.optional(),
   extras: ExtrasSchema.default({}),
 });
 export type Branch = z.infer<typeof BranchSchema>;
@@ -182,6 +210,8 @@ export const NodeSchema = z.object({
   notes: z.string().default(''),
   /** branch / set / input 的運算式；line 節點不使用。 */
   expression: ExpressionSchema.optional(),
+  /** 進入這一列時生效的演出（背景、插圖、畫面效果、屬性變化…）。 */
+  stage: StageSchema.optional(),
   /** kind 為 branch 時的分支清單，依序判斷。 */
   branches: z.array(BranchSchema).default([]),
   /**

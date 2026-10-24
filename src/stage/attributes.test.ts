@@ -76,21 +76,21 @@ describe('屬性清單檢查', () => {
     const project = await importWithList();
     const issues = checkScript(project);
 
-    expect(issues.map((i) => `${i.path}｜${i.message.split('（')[0]}`)).toEqual([
+    expect(issues.map((i) => `${i.path}｜${i.message.split('（')[0]}`).sort()).toEqual([
       '開幕前一天 / ID 2 / 屬性變化｜屬性變化「新切度EXP」不在屬性清單裡',
-      '開幕前一天 / ID 4 / 屬性變化｜屬性變化「信任+」看不懂，寫法是「名稱±數字」，多個用「，」分隔',
+      '開幕前一天 / ID 4｜屬性變化「信任+」看不懂，寫法是「名稱±數字」，多個用「，」分隔',
       '開幕前一天 / ID 4 / 屬性變化｜屬性變化「新切度EXP」不在屬性清單裡',
-    ]);
+    ].sort());
     expect(issues.every((i) => i.level === 'error')).toBe(true);
     expect(issues[0]!.message).toContain('清單：信任、幹勁、親切度EXP');
     // 原文不動：劇本由作者自己改
     const node = project.scenes[0]!.nodes.find((n) => n.source?.id === '2')!;
-    expect(node.extras['屬性變化']).toBe('新切度EXP+1');
+    expect(node.stage?.attributes).toBe('新切度EXP+1');
   });
 
   it('名稱也可以直接寫變數 id', async () => {
     const project = await importWithList();
-    project.scenes[0]!.nodes[0]!.extras['屬性變化'] = 'trust+1';
+    project.scenes[0]!.nodes[0]!.stage = { attributes: 'trust+1' };
     expect(checkScript(project).filter((i) => i.path.includes('ID 0 '))).toEqual([]);
   });
 
