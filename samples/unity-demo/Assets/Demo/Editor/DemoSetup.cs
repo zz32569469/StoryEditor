@@ -13,7 +13,13 @@ namespace StoryDemo.Editor {
 
         const string ArtRoot      = "Assets/Demo/Art";
         const string PortraitDir  = ArtRoot + "/Portraits";
-        public const string PortraitTable = "Assets/Demo/DemoPortraits.asset";
+        const string AudioDir     = "Assets/Demo/Audio";
+        public const string PortraitTable   = "Assets/Demo/DemoPortraits.asset";
+        public const string BackgroundTable = "Assets/Demo/DemoBackgrounds.asset";
+        public const string CgTable         = "Assets/Demo/DemoCgs.asset";
+        public const string AudioTable      = "Assets/Demo/DemoAudio.asset";
+        // 中性範例劇本放在示範專案外（samples/），跟網頁編輯器共用同一份
+        public const string SampleCafe      = "../sample-cafe.story.json";
         public const string ScenePath     = "Assets/Demo/Demo.unity";
         public const string WalkStory     = "Assets/Demo/Stories/ui-walk.story.json";
         public const string Background    = ArtRoot + "/Backgrounds/店內-白天.png";
@@ -46,6 +52,9 @@ namespace StoryDemo.Editor {
         static void Finish() {
             ConfigureSprites();
             BuildPortraitTable();
+            BuildSpriteTable<StorySpriteTable>(BackgroundTable, ArtRoot + "/Backgrounds");
+            BuildSpriteTable<StorySpriteTable>(CgTable, ArtRoot + "/CGs");
+            BuildAudioTable();
             BuildScene();
             AssetDatabase.SaveAssets();
             Debug.Log("[DemoSetup] 完成");
@@ -66,18 +75,39 @@ namespace StoryDemo.Editor {
         }
 
         // 代號 = 檔名（例「店長-微笑」），跟劇本「立繪」欄寫的一樣
-        static void BuildPortraitTable() {
-            var table = AssetDatabase.LoadAssetAtPath<StoryPortraitTable>(PortraitTable);
+        static void BuildPortraitTable() => BuildSpriteTable<StoryPortraitTable>(PortraitTable, PortraitDir);
+
+        static void BuildSpriteTable<T>(string assetPath, string folder) where T : StorySpriteTable {
+            var table = AssetDatabase.LoadAssetAtPath<T>(assetPath);
             if (table == null) {
-                table = ScriptableObject.CreateInstance<StoryPortraitTable>();
-                AssetDatabase.CreateAsset(table, PortraitTable);
+                table = ScriptableObject.CreateInstance<T>();
+                AssetDatabase.CreateAsset(table, assetPath);
             }
             table.entries.Clear();
-            foreach (string guid in AssetDatabase.FindAssets("t:Sprite", new[] { PortraitDir })) {
+            foreach (string guid in AssetDatabase.FindAssets("t:Sprite", new[] { folder })) {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                table.entries.Add(new StoryPortraitTable.Entry {
+                table.entries.Add(new StorySpriteTable.Entry {
                     key = Path.GetFileNameWithoutExtension(path),
                     sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path),
+                });
+            }
+            table.entries.Sort((a, b) => string.CompareOrdinal(a.key, b.key));
+            table.Invalidate();
+            EditorUtility.SetDirty(table);
+        }
+
+        static void BuildAudioTable() {
+            var table = AssetDatabase.LoadAssetAtPath<StoryAudioTable>(AudioTable);
+            if (table == null) {
+                table = ScriptableObject.CreateInstance<StoryAudioTable>();
+                AssetDatabase.CreateAsset(table, AudioTable);
+            }
+            table.entries.Clear();
+            foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { AudioDir })) {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                table.entries.Add(new StoryAudioTable.Entry {
+                    key = Path.GetFileNameWithoutExtension(path),
+                    clip = AssetDatabase.LoadAssetAtPath<AudioClip>(path),
                 });
             }
             table.entries.Sort((a, b) => string.CompareOrdinal(a.key, b.key));

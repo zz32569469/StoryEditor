@@ -29,6 +29,9 @@ dist-ssr
 *.xlsx
 *.story.json
 !samples/demo.story.json
+# 中性範例劇本（咖啡店開幕前一天），由 npm run sample:cafe 產生
+!samples/sample-cafe.xlsx
+!samples/sample-cafe.story.json
 
 # .NET 測試專案的建置產物（核心層原始碼在 unity-runtime/，這裡只是編譯出口）
 tools/csharp/**/bin/

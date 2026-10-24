@@ -1,4 +1,5 @@
 import type { Stage, StageField, StoryNode, StoryProject } from '../schema/story';
+import { writeAttributeSheet } from './attributeSheet';
 import { COLUMN_ALIASES, DEFAULT_COLUMNS, STAGE_COLUMNS, STAGE_FIELDS, findColumn, markerFor } from './format';
 
 /**
@@ -202,6 +203,8 @@ export async function exportLegacyWorkbook(project: StoryProject): Promise<Legac
 
     totalRows += out.length;
   }
+
+  writeAttributeSheet(workbook, project.variables);
 
   const buffer = await workbook.xlsx.writeBuffer();
   return {

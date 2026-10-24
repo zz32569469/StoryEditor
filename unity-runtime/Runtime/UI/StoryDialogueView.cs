@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using StoryRuntime.Story;
 using StoryRuntime.Tags;
 using TMPro;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace StoryRuntime.UI {
         public event Action OnAutoClick;
         public event Action OnLineShown;
         public event Action OnAutoElapsed;
+        public event Action<int> OnReveal;
 
         // 原型以 1024×768 設計；畫布參考解析度 1280×960，尺寸一律 ×1.25
         public const float S = 1.25f;
@@ -73,10 +75,18 @@ namespace StoryRuntime.UI {
         static readonly Color ButtonInk  = StoryUiKit.Hex("#68472c");
         public static readonly Color ShadeColor = StoryUiKit.Hex("#17222c20");
 
+        // 震動強度 1 = 原型 1024×768 下約 6px
+        public const float ShakePixels = 6 * S;
+
         TMP_FontAsset _font;
         Material _textMaterial;
 
-        RectTransform _root, _portraitRt, _card, _nameTag, _auto, _nextRt;
+        RectTransform _root, _stage, _portraitRt, _card, _nameTag, _auto, _nextRt, _lidTop, _lidBottom;
+        CrossfadeLayer _background, _cg;
+        Image _curtain, _flash;
+        readonly Tween _curtainAlpha = new Tween(), _flashAlpha = new Tween(), _eyes = new Tween(1), _shake = new Tween();
+        float _shakeStrength;
+        bool _closeEyesToBlack;
         RectTransform _bodyView, _bodyContent, _listView, _listContent, _input, _inputFields;
         Image _portrait, _shade, _autoFill, _autoEdge, _autoDot, _next;
         TextMeshProUGUI _name, _body, _autoLabel, _inputError;
@@ -93,6 +103,14 @@ namespace StoryRuntime.UI {
         public bool IsTyping => _schedule != null && _elapsed < _schedule.Total;
         public bool IsOpen => _root != null && _root.gameObject.activeSelf;
         public RectTransform Root => _root;
+        public RectTransform Stage => _stage;
+        // 測試與換皮檢查用：目前的演出狀態
+        public Sprite BackgroundSprite => _background.Current;
+        public bool BackgroundIsBlack => _background.IsBlack;
+        public Sprite CgSprite => _cg.Current;
+        public float CurtainAlpha => _curtainAlpha.Value;
+        public float FlashAlpha => _flashAlpha.Value;
+        public float EyesOpen => _eyes.Value;
         public RectTransform Card => _card;
         public RectTransform Portrait => _portraitRt;
 
@@ -104,19 +122,32 @@ namespace StoryRuntime.UI {
             _root.gameObject.AddComponent<Image>().color = Color.clear;
             _root.gameObject.AddComponent<Button>().onClick.AddListener(() => OnAdvanceClick?.Invoke());
 
-            _portraitRt = StoryUiKit.Rect("Portrait", _root);
+            // 所有畫面元素放在 Stage 底下，「震動」時整個畫面（含對話框）一起晃
+            _stage = StoryUiKit.Stretch(StoryUiKit.Rect("Stage", _root));
+
+            // 由下而上：背景 → 立繪 → 插圖 → 情境遮罩 → 黑幕 → 眼皮 → 閃白 → 對話框
+            _background = new CrossfadeLayer(_stage, "Background");
+            _portraitRt = StoryUiKit.Rect("Portrait", _stage);
             _portraitRt.anchorMin = _portraitRt.anchorMax = _portraitRt.pivot = Vector2.one;
             _portrait = _portraitRt.gameObject.AddComponent<Image>();
             _portrait.preserveAspect = true;
             _portrait.raycastTarget = false;
             _portrait.enabled = false;
 
+            _cg = new CrossfadeLayer(_stage, "CG");
+
             // 蓋場景與立繪、不蓋對話框（原型的 0.7px 模糊 uGUI 沒有現成做法，只做色罩）
-            _shade = StoryUiKit.Stretch(StoryUiKit.Rect("Narrative Shade", _root)).gameObject.AddComponent<Image>();
+            _shade = StoryUiKit.Stretch(StoryUiKit.Rect("Narrative Shade", _stage)).gameObject.AddComponent<Image>();
             _shade.raycastTarget = false;
             _shade.color = Color.clear;
 
-            _card = StoryUiKit.Rect("Card", _root);
+            // 黑幕類效果蓋背景與立繪、不蓋對話框：黑畫面上照樣能對話
+            _curtain = Overlay("Curtain", Color.black);
+            _lidTop = Lid("Eyelid Top", top: true);
+            _lidBottom = Lid("Eyelid Bottom", top: false);
+            _flash = Overlay("Flash", Color.white);
+
+            _card = StoryUiKit.Rect("Card", _stage);
             _card.anchorMin = Vector2.zero; _card.anchorMax = new Vector2(1, 0); _card.pivot = new Vector2(0.5f, 0);
             _card.offsetMin = new Vector2(Gutter, Bottom);
             _card.offsetMax = new Vector2(-Gutter, Bottom + MinHeight);
@@ -140,6 +171,25 @@ namespace StoryRuntime.UI {
 
             foreach (var text in _root.GetComponentsInChildren<TMP_Text>(true)) Tint(text);
             _root.gameObject.SetActive(false);
+        }
+
+        Image Overlay(string name, Color color) {
+            var image = StoryUiKit.Stretch(StoryUiKit.Rect(name, _stage)).gameObject.AddComponent<Image>();
+            image.raycastTarget = false;
+            image.color = new Color(color.r, color.g, color.b, 0);
+            return image;
+        }
+
+        // 上下兩片黑色眼皮：張開程度 1 時各自縮到畫面外，0 時在中線合起
+        RectTransform Lid(string name, bool top) {
+            var rt = StoryUiKit.Rect(name, _stage);
+            rt.anchorMin = new Vector2(0, top ? 1 : 0);
+            rt.anchorMax = new Vector2(1, top ? 1 : 0);
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            var image = rt.gameObject.AddComponent<Image>();
+            image.color = Color.black;
+            image.raycastTarget = false;
+            return rt;
         }
 
         TextMeshProUGUI Text(RectTransform parent, string name, string text, float px, Color color,
@@ -274,6 +324,14 @@ namespace StoryRuntime.UI {
 
         public void Open() {
             _root.gameObject.SetActive(true);
+            // 每次開始對話都從乾淨的舞台開始：沒有背景（透出後面的遊戲畫面）、沒有插圖與黑幕
+            _background.Clear();
+            _cg.Clear();
+            _curtainAlpha.Set(0);
+            _flashAlpha.Set(0);
+            _eyes.Set(1);
+            _shake.Set(0);
+            _closeEyesToBlack = false;
             _narrative = false;
             _shadeAlpha = 0;
             _shade.color = Color.clear;
@@ -311,7 +369,49 @@ namespace StoryRuntime.UI {
         public void RevealAll() {
             if (_schedule == null) return;
             _elapsed = (float)_schedule.Total;
-            SetRevealed(_schedule.Times.Count);
+            SetRevealed(_schedule.Times.Count, typing: false);
+        }
+
+        public void SetBackground(Sprite sprite, float fade) => _background.Show(sprite, fade, blackWhenNull: true);
+        public void SetCg(Sprite sprite, float fade) => _cg.Show(sprite, fade, blackWhenNull: false);
+
+        public void PlayScreenEffect(ScreenCommand command) {
+            float seconds = command.Args.Count > 0 ? (float)command.Args[0] : 0;
+            switch (command.Name) {
+                case "黑幕":
+                    _curtainAlpha.Set(1);
+                    break;
+                case "淡出":
+                    _curtainAlpha.To(1, seconds);
+                    break;
+                case "淡入":
+                    _curtainAlpha.Set(1);
+                    _curtainAlpha.To(0, seconds);
+                    break;
+                case "睜眼":
+                    // 眼皮從合起開始張開；底下的黑幕同時拿掉，張開後看到的是畫面
+                    _curtainAlpha.Set(0);
+                    _eyes.Set(0);
+                    _eyes.To(1, seconds);
+                    _closeEyesToBlack = false;
+                    break;
+                case "閉眼":
+                    _eyes.To(0, seconds);
+                    _closeEyesToBlack = true;   // 闔起後換成黑幕，之後的淡入／睜眼才接得上
+                    break;
+                case "震動":
+                    _shakeStrength = command.Args.Count > 1 ? (float)command.Args[1] : 1;
+                    _shake.Set(1);
+                    _shake.To(0, seconds);
+                    break;
+                case "閃白":
+                    _flashAlpha.Set(1);
+                    _flashAlpha.To(0, seconds);
+                    break;
+                default:
+                    Debug.LogWarning($"[StoryDialogueView] 不支援的畫面效果「{command.Name}」");
+                    break;
+            }
         }
 
         public void ShowChoices(IReadOnlyList<StoryChoiceItem> choices) {
@@ -471,12 +571,13 @@ namespace StoryRuntime.UI {
             OnInputSubmit?.Invoke(values);
         }
 
-        void SetRevealed(int visible) {
+        void SetRevealed(int visible, bool typing = true) {
             if (visible == _revealed) return;
             // 只在數字變了才寫回：maxVisibleCharacters 每次設定都會讓 TMP 重建網格
             _revealed = visible;
             _body.maxVisibleCharacters = visible;
             FollowTyping();
+            if (typing) OnReveal?.Invoke(visible);
         }
 
         // 長文捲動：讓剛出現的那一行保持在可視範圍內
@@ -558,6 +659,8 @@ namespace StoryRuntime.UI {
             shade.a *= _shadeAlpha;
             _shade.color = shade;
 
+            UpdateStage(dt);
+
             if (!_input.gameObject.activeSelf) ReadKeys();   // 輸入欄開著時鍵盤歸輸入框
         }
 
@@ -569,6 +672,134 @@ namespace StoryRuntime.UI {
                 OnAdvanceClick?.Invoke();
             if (Input.GetKeyDown(KeyCode.Escape) && _autoOn) OnAutoClick?.Invoke();   // Esc 關掉 AUTO
 #endif
+        }
+
+        void UpdateStage(float dt) {
+            _background.Update(dt);
+            _cg.Update(dt);
+            _curtainAlpha.Tick(dt);
+            _flashAlpha.Tick(dt);
+            _eyes.Tick(dt);
+            _shake.Tick(dt);
+
+            if (_closeEyesToBlack && _eyes.Done && _eyes.Value <= 0) {
+                _closeEyesToBlack = false;
+                _curtainAlpha.Set(1);
+                _eyes.Set(1);
+            }
+
+            SetAlpha(_curtain, _curtainAlpha.Value);
+            SetAlpha(_flash, _flashAlpha.Value);
+
+            // 眼皮：張開程度 0 → 各蓋半個畫面；用平滑曲線，張開的頭尾慢、中段快
+            float open = Mathf.SmoothStep(0, 1, _eyes.Value);
+            float half = _stage.rect.height / 2 * (1 - open);
+            _lidTop.sizeDelta = new Vector2(0, half);
+            _lidTop.pivot = new Vector2(0.5f, 1);
+            _lidTop.anchoredPosition = Vector2.zero;
+            _lidBottom.sizeDelta = new Vector2(0, half);
+            _lidBottom.pivot = new Vector2(0.5f, 0);
+            _lidBottom.anchoredPosition = Vector2.zero;
+
+            float amp = _shake.Value * _shakeStrength * ShakePixels;
+            _stage.anchoredPosition = amp > 0.01f
+                ? new Vector2(UnityEngine.Random.Range(-amp, amp), UnityEngine.Random.Range(-amp, amp))
+                : Vector2.zero;
+        }
+
+        static void SetAlpha(Image image, float alpha) {
+            var c = image.color;
+            c.a = alpha;
+            image.color = c;
+        }
+
+        // 線性補間的數值，給黑幕、閃白、眼皮、震動用
+        sealed class Tween {
+            float _from, _to, _duration, _elapsed;
+            public float Value { get; private set; }
+            public bool Done => _elapsed >= _duration;
+
+            public Tween(float value = 0) { Set(value); }
+
+            public void Set(float value) {
+                Value = _from = _to = value;
+                _duration = _elapsed = 0;
+            }
+
+            public void To(float target, float seconds) {
+                _from = Value;
+                _to = target;
+                _duration = Mathf.Max(0, seconds);
+                _elapsed = 0;
+                if (_duration <= 0) Value = target;
+            }
+
+            public void Tick(float dt) {
+                if (_elapsed >= _duration) return;
+                _elapsed += dt;
+                Value = Mathf.Lerp(_from, _to, Mathf.Clamp01(_elapsed / _duration));
+            }
+        }
+
+        // 背景與插圖：兩張圖輪流，換圖時新圖在上淡入（溶接），淡入完成才把舊圖藏起來
+        sealed class CrossfadeLayer {
+            readonly Image[] _images = new Image[2];
+            int _front;
+            float _fade, _elapsed;
+
+            public Sprite Current { get; private set; }
+            public bool IsBlack { get; private set; }
+
+            public CrossfadeLayer(RectTransform parent, string name) {
+                var root = StoryUiKit.Stretch(StoryUiKit.Rect(name, parent));
+                for (int i = 0; i < 2; i += 1) {
+                    var image = StoryUiKit.Stretch(StoryUiKit.Rect($"{name} {i}", root)).gameObject.AddComponent<Image>();
+                    image.preserveAspect = true;
+                    image.raycastTarget = false;
+                    image.enabled = false;
+                    _images[i] = image;
+                }
+            }
+
+            public void Clear() {
+                foreach (var image in _images) image.enabled = false;
+                Current = null;
+                IsBlack = false;
+                _fade = _elapsed = 0;
+            }
+
+            // sprite 為 null：背景換成全黑（blackWhenNull）、插圖收起
+            public void Show(Sprite sprite, float fade, bool blackWhenNull) {
+                Current = sprite;
+                IsBlack = sprite == null && blackWhenNull;
+                _front = 1 - _front;
+                var next = _images[_front];
+                next.transform.SetAsLastSibling();
+                next.sprite = sprite;
+                next.preserveAspect = sprite != null;
+                next.enabled = sprite != null || blackWhenNull;
+                var color = sprite != null ? Color.white : Color.black;
+                color.a = fade > 0 ? 0 : 1;
+                next.color = color;
+                _fade = fade;
+                _elapsed = 0;
+                if (fade <= 0) _images[1 - _front].enabled = false;
+                else if (sprite == null && !blackWhenNull) {
+                    // 收起插圖也要淡出：讓舊圖淡掉，而不是新圖淡入
+                    next.enabled = false;
+                }
+            }
+
+            public void Update(float dt) {
+                if (_elapsed >= _fade) return;
+                _elapsed += dt;
+                float t = Mathf.Clamp01(_elapsed / _fade);
+                var next = _images[_front];
+                var prev = _images[1 - _front];
+                if (next.enabled) SetAlpha(next, t);
+                else SetAlpha(prev, 1 - t);
+                if (t >= 1) prev.enabled = false;
+            }
         }
 
         void LateUpdate() {

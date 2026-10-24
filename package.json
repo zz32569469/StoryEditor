@@ -15,7 +15,8 @@
     "convert": "tsx scripts/convert-legacy.ts",
     "gen:golden": "tsx scripts/gen-golden.ts",
     "analyze": "tsx scripts/analyze.ts",
-    "check:roundtrip": "tsx scripts/check-roundtrip.ts"
+    "check:roundtrip": "tsx scripts/check-roundtrip.ts",
+    "sample:cafe": "tsx scripts/make-sample-cafe.ts && tsx scripts/convert-legacy.ts samples/sample-cafe.xlsx samples/sample-cafe.story.json"
   },
   "dependencies": {
     "@tanstack/react-table": "^8.21.3",

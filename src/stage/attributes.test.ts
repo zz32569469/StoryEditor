@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { describe, expect, it } from 'vitest';
 
+import { exportLegacyWorkbook } from '../legacy/export';
 import { importLegacyWorkbook } from '../legacy/import';
 import { checkScript } from '../schema/scriptCheck';
 import { parseAttributeChanges } from './attributes';
@@ -107,5 +108,47 @@ describe('屬性清單檢查', () => {
 
     expect(again.variables.find((v) => v.id === 'kindnessExp')?.label).toBe('親切度EXP');
     expect(checkScript(again)).toHaveLength(3);
+  });
+});
+
+describe('劇本檔裡的「屬性清單」工作表', () => {
+  async function withListSheet(extra: string[][] = []): Promise<ArrayBuffer> {
+    const wb = new ExcelJS.Workbook();
+    const list = wb.addWorksheet('屬性清單');
+    list.addRow(['屬性名稱', '變數', '預設值', '說明']);
+    list.addRow(['信任', 'trust', '0', '店長對新人的信任']);
+    list.addRow(['幹勁', 'motivation', '5', '']);
+    list.addRow(['親切度EXP', 'kindnessExp', '', '']);
+    for (const row of extra) list.addRow(row);
+    const sheet = wb.addWorksheet('開幕前一天');
+    sheet.addRow(HEADERS);
+    for (const row of CAFE['開幕前一天']!) sheet.addRow(HEADERS.map((h) => row[h] ?? ''));
+    return (await wb.xlsx.writeBuffer()) as ArrayBuffer;
+  }
+
+  it('宣告屬性清單，不當成場景；清單內的名稱不再報錯', async () => {
+    const { project } = await importLegacyWorkbook(await withListSheet(), '咖啡店');
+    expect(project.scenes.map((s) => s.name)).toEqual(['開幕前一天']);
+    expect(project.variables.filter((v) => v.label).map((v) => [v.label, v.id, v.default])).toEqual([
+      ['信任', 'trust', 0],
+      ['幹勁', 'motivation', 5],
+      ['親切度EXP', 'kindnessExp', 0],
+    ]);
+    // 只剩兩處「新切度EXP」錯字與一處寫法錯誤
+    expect(checkScript(project)).toHaveLength(3);
+  });
+
+  it('寫錯的列跳過並提醒', async () => {
+    const { report } = await importLegacyWorkbook(await withListSheet([['安心感', '1st', '0', '']]), '咖啡店');
+    expect(report.warnings.some((w) => w.includes('屬性清單') && w.includes('第 5 列'))).toBe(true);
+  });
+
+  it('匯出時寫回屬性清單表，重新匯入一樣', async () => {
+    const { project } = await importLegacyWorkbook(await withListSheet(), '咖啡店');
+    const exported = await (await exportLegacyWorkbook(project)).blob.arrayBuffer();
+    const { project: again } = await importLegacyWorkbook(exported, '咖啡店');
+    expect(again.variables.filter((v) => v.label).map((v) => [v.label, v.id, v.default, v.description])).toEqual(
+      project.variables.filter((v) => v.label).map((v) => [v.label, v.id, v.default, v.description]),
+    );
   });
 });

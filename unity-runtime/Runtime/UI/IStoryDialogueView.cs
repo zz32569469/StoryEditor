@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using StoryRuntime.Story;
 using StoryRuntime.Tags;
 using UnityEngine;
 
@@ -33,6 +34,8 @@ namespace StoryRuntime.UI {
         // 這一句整句顯示完（逐字跑完或被點擊補完），每次 ShowLine 之後一次
         event Action OnLineShown;
         event Action OnAutoElapsed;
+        // 逐字推進到第幾個字（visible 為目前顯示的字數）。點擊補完整句不發，那些字的 [sfx] 就跳過
+        event Action<int> OnReveal;
 
         bool IsTyping { get; }
 
@@ -49,5 +52,13 @@ namespace StoryRuntime.UI {
         void SetAuto(bool on);
         void StartAutoTimer(double seconds);
         void CancelAutoTimer();
+
+        // ── 演出（docs/FORMAT.md §3.5）──
+        // 背景：sprite 為 null 代表「無」（全黑）；fade > 0 時交叉淡化
+        void SetBackground(Sprite sprite, float fade);
+        // 插圖：sprite 為 null 代表收起
+        void SetCg(Sprite sprite, float fade);
+        // 睜眼、閉眼、黑幕、淡出、淡入、震動、閃白（溶接與 input 由 Presenter 處理，不會傳進來）
+        void PlayScreenEffect(ScreenCommand command);
     }
 }

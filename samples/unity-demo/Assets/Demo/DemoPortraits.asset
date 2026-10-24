@@ -21,3 +21,5 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 6ac434c141b492143aa9df7eba52b16d, type: 3}
   - key: "\u65B0\u4EBA-\u958B\u5FC3"
     sprite: {fileID: 21300000, guid: aa5c38d0e1c62ea42ad167c7cef85e33, type: 3}
+  - key: "\u719F\u5BA2-\u666E\u901A"
+    sprite: {fileID: 21300000, guid: 0ce7be93cb93b4947af708de3fd6a6c7, type: 3}

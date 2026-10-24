@@ -1,6 +1,7 @@
 import type { Worksheet } from 'exceljs';
 
 import { declareMissingVariables } from '../expr/variables';
+import { isAttributeSheet, readAttributeSheet } from './attributeSheet';
 import { createEmptyProject } from '../schema/factory';
 import { newId } from '../schema/ids';
 import type {
@@ -494,7 +495,19 @@ export async function importLegacyWorkbook(
     warnings: [],
   };
 
+  // 沿用前一份專案的變數宣告：作者在變數面板設的型別、預設值、說明與屬性名稱（屬性清單）
+  // 都只存在專案裡，重新匯入時不帶過來就會被洗掉。劇本檔裡的「屬性清單」表再蓋上去
+  project.variables = (previous?.variables ?? []).map((v) => ({ ...v }));
+
   for (const sheet of workbook.worksheets) {
+    if (isAttributeSheet(sheet.name)) {
+      for (const declared of readAttributeSheet(sheet, report.warnings)) {
+        const index = project.variables.findIndex((v) => v.id === declared.id);
+        if (index >= 0) project.variables[index] = { ...project.variables[index]!, ...declared };
+        else project.variables.push(declared);
+      }
+      continue;
+    }
     const headers = readHeaders(sheet);
     const rows = readRows(sheet, headers, report.warnings);
     report.rows += rows.length;
@@ -525,10 +538,6 @@ export async function importLegacyWorkbook(
   report.characters = project.characters.map((c) => c.id);
   project.meta.tagSyntax = detectTagSyntax(project);
   report.tagSyntax = project.meta.tagSyntax;
-
-  // 沿用前一份專案的變數宣告：作者在變數面板設的型別、預設值、說明與屬性名稱（屬性清單）
-  // 都只存在專案裡，重新匯入時不帶過來就會被洗掉。
-  project.variables = (previous?.variables ?? []).map((v) => ({ ...v }));
 
   // 變數只存在於運算式字串裡，宣告出來編輯器才能檢查、播放器才知道初始值。
   report.variables = declareMissingVariables(project).map((v) => v.id);

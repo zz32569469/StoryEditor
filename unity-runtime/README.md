@@ -2,8 +2,8 @@
 
 播放 StoryEditor 匯出的 `.story.json`。
 
-核心層（解析、求值、走訪、TMP 標記、逐字時間表）加上一套可換皮的預設對話介面（`StoryRuntime.UI`）。
-演出欄位（背景、插圖、畫面效果…）的寫法還在提案階段，見 [`docs/FORMAT.md` §3.5](../docs/FORMAT.md)。
+核心層（解析、求值、走訪、TMP 標記、逐字時間表、演出欄位）加上一套可換皮的預設對話介面（`StoryRuntime.UI`）。
+演出欄位的寫法見 [`docs/FORMAT.md` §3.5](../docs/FORMAT.md)。
 
 ## 為什麼核心層不引用 UnityEngine
 
@@ -44,6 +44,26 @@ yield return controller.Play("第一章");   // 用工作表名稱找場景，�
   `店長 os` 寫「店長」）。各作品用 `Override` 加自己的對照。
 - **換皮**：實作 `IStoryDialogueView`，用 `controller.UseView(...)` 換掉。Presenter 只認介面，計時在 View、判斷在 Presenter。
 - **遊戲接線**：`Opened`／`Closed` 事件讓遊戲藏自己的 HUD；變數傳自己的 `IStoryVariables` 才會進存檔。
+
+### 演出
+
+`StoryPlayer` 每一步回傳 `state.Cues`（經過的、有演出欄位的節點／選項／分支，依序）與 `state.Effects`
+（屬性變化，已依屬性清單套到變數上）。Presenter 照 Cues 執行：同一列先換背景與插圖（有「溶接」就交叉淡化），
+再播畫面效果；效果音、BGM 交給 `IStoryAudio`；物品消耗、功能解鎖、屬性變化、舊寫法的輸入提示（`OpenNameInput`）
+用控制器的事件交給遊戲。台詞裡的 `[sfx=代號]` 在逐字顯示到那個字時播放（點擊補完整句時略過）。
+
+```csharp
+controller.backgrounds = backgroundTable;   // StorySpriteTable：「背景」欄代號 → 圖
+controller.cgs         = cgTable;           // StorySpriteTable：「插圖」欄代號 → 圖
+controller.audioTable  = audioTable;        // StoryAudioTable：效果音、OST 代號 → 音檔（或 UseAudio 接遊戲自己的音效系統）
+controller.AttributesChanged += effects => ...;
+controller.ItemsConsumed     += (items, target) => ...;
+controller.FeaturesUnlocked  += keys => ...;
+```
+
+- 背景、插圖、黑幕、眼皮、閃白都在對話框下面；只有「震動」連對話框一起晃。
+- 對應表裡沒有的代號（例如只寫「插圖」的佔位）跳過並記 warning，不清掉目前的畫面。
+- 讀檔（`ResumeAt`）時，往回找存檔那一句之前最後的背景、插圖與 BGM 直接放上去；那一句的屬性變化不會重複套用。
 - 鍵盤（Space／Enter 前進、Esc 關 AUTO）只接舊版 Input Manager；只開新版 Input System 的專案要自己把按鍵接上。
 
 ## 示範專案
@@ -178,7 +198,7 @@ npm run gen:golden
 cd tools/csharp/StoryRuntime.Tests && dotnet test
 ```
 
-206 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
+230 個案例，涵蓋運算式求值、標記解析（逐字比對作用中的標籤）、整場走訪
 （狀態、停在哪個節點、走過哪些節點、看得到哪些選項、變數變化）、逐字節奏（每個字的時刻逐位比對）、變數插值與轉義。
 錯誤訊息也逐字比對 —— 那些訊息會出現在使用者眼前，是規格的一部分。
 
@@ -189,8 +209,7 @@ cd tools/csharp/StoryRuntime.Tests && dotnet test
 
 ## 還沒做的
 
-- 演出欄位（背景、插圖、畫面效果、效果音、OST、屬性變化…）：寫法提案待確認（FORMAT.md §3.5）
-- 多人立繪的左中右位置、進退場
+- 多人立繪的左中右位置、進退場（「位置」「立繪效果」欄已能匯入，播放端下一段做）
 - `shake`／`wave` 的逐頂點動畫
 - 閱讀輔助：對話紀錄、快轉讀過的句子、隱藏對話框、文字速度設定
 
