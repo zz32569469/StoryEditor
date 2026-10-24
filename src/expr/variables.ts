@@ -64,6 +64,40 @@ function inferExpr(
 }
 
 /**
+ * `age == playerAge`：一邊型別已知、另一邊是還不知道的變數時，兩邊推成同一型別。
+ *
+ * `==` 是嚴格比較。若 playerAge 落到預設的字串，玩家輸入的「17」永遠不等於數字 17，
+ * 年齡驗證會一直走「對不上」那條，而且不會有任何錯誤訊息。
+ * 要放在傳播迴圈裡：age 的型別往往是從 CalcAge 的回傳值才推出來的。
+ */
+function constrainFromEquality(
+  expr: Expr,
+  known: Known,
+  functions: Record<string, HostFunction>,
+): boolean {
+  if (expr.kind === 'unary') return constrainFromEquality(expr.operand, known, functions);
+  if (expr.kind === 'call') {
+    return expr.args.map((arg) => constrainFromEquality(arg, known, functions)).some(Boolean);
+  }
+  if (expr.kind !== 'binary') return false;
+
+  let changed = constrainFromEquality(expr.left, known, functions);
+  if (constrainFromEquality(expr.right, known, functions)) changed = true;
+  if (expr.op !== '==' && expr.op !== '!=') return changed;
+
+  const adopt = (side: Expr, other: Expr) => {
+    if (side.kind !== 'var' || known.has(side.name)) return;
+    const type = inferExpr(other, known, functions);
+    if (type === 'unknown') return;
+    known.set(side.name, type);
+    changed = true;
+  };
+  adopt(expr.left, expr.right);
+  adopt(expr.right, expr.left);
+  return changed;
+}
+
+/**
  * 從運算式的使用方式反推變數型別。
  *
  * `age < 25` → age 是數字；`Max(base, 25)` → base 是數字；
@@ -172,6 +206,7 @@ export function collectProjectVariables(
   for (let pass = 0; pass < 4; pass += 1) {
     let changed = false;
     for (const statement of statements) {
+      if (statement.expr && constrainFromEquality(statement.expr, known, functions)) changed = true;
       if (!statement.target || !statement.expr) continue;
       if (known.has(statement.target)) continue;
       const inferred = inferExpr(statement.expr, known, functions);

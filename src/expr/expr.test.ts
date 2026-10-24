@@ -231,6 +231,28 @@ describe('變數型別推測', () => {
     ).toEqual({ base: 'number', level: 'number', finalScore: 'number' });
   });
 
+  it('== 兩邊同型別：與 CalcAge 的結果比較的輸入值推成數字', () => {
+    // 推成字串的話，玩家輸入的「17」永遠不等於數字 17，年齡驗證會靜默失效。
+    expect(
+      typesOf(
+        project([
+          { set: 'age = CalcAge(birthday, profileCreatedDate)' },
+          { condition: 'age == playerAge' },
+        ]),
+      ),
+    ).toEqual({ age: 'number', birthday: 'date', profileCreatedDate: 'date', playerAge: 'number' });
+  });
+
+  it('== 與字面值比較也會定型，已知型別不會被改寫', () => {
+    expect(typesOf(project([{ condition: "mood == 'happy' && 3 != count" }]))).toEqual({
+      mood: 'string',
+      count: 'number',
+    });
+    expect(typesOf(project([{ condition: 'age < 25' }, { condition: "age == '25'" }]))).toEqual({
+      age: 'number',
+    });
+  });
+
   it('字串相加 → string', () => {
     expect(typesOf(project([{ set: 'fullName = lastName + firstName' }]))).toMatchObject({
       fullName: 'string',
