@@ -1,0 +1,13 @@
+{
+  "name": "StoryDemo.Editor",
+  "rootNamespace": "StoryDemo.Editor",
+  "references": [
+    "StoryDemo",
+    "StoryRuntime.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}

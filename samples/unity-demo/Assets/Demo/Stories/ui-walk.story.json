@@ -1,0 +1,45 @@
+{
+  "meta": {
+    "formatVersion": "1.3.0",
+    "projectName": "預設對話介面走查",
+    "languages": ["zh"],
+    "baseLanguage": "zh",
+    "tagSyntax": "bracket"
+  },
+  "tagRegistry": [
+    { "name": "b", "kind": "paired", "params": [] },
+    { "name": "i", "kind": "paired", "params": [] },
+    { "name": "color", "kind": "paired", "positional": "value", "params": [{ "name": "value", "type": "color" }] }
+  ],
+  "variables": [
+    { "id": "trust", "type": "number", "default": 0, "description": "" },
+    { "id": "rookieName", "type": "string", "default": "", "description": "你的名字" }
+  ],
+  "characters": [
+    { "id": "manager", "name": { "zh": "店長" } },
+    { "id": "rookie", "name": { "zh": "新人" } },
+    { "id": "rookie_os", "name": { "zh": "新人 os" } },
+    { "id": "narration", "name": { "zh": "narration" } }
+  ],
+  "scenes": [
+    {
+      "id": "01KZDEMOUIWALK0000000000000",
+      "name": "開幕前一天",
+      "entryNodeId": "a",
+      "nodes": [
+        { "id": "a", "speaker": "narration", "text": { "zh": "咖啡店開幕的前一天，早上七點。" }, "next": "b" },
+        { "id": "b", "speaker": "manager", "portrait": "店長-微笑", "text": { "zh": "早安。今天要把[b]菜單[/b]定下來。" }, "next": "c" },
+        { "id": "c", "speaker": "rookie_os", "text": { "zh": "[i][color=#7a6f66]（第一天上班，好緊張……）[/color][/i]" }, "next": "d" },
+        { "id": "d", "speaker": "rookie", "portrait": "新人-緊張", "text": { "zh": "是、是的！請多指教！" }, "next": "e" },
+        { "id": "e", "speaker": "manager", "portrait": "店長-嚴肅", "text": { "zh": "先說清楚流程。開店前要確認咖啡機的水壓、磨豆機的刻度、牛奶的溫度，還有收銀台的零錢。每一樣都要寫在檢查表上，簽名之後才算完成。客人進門時先打招呼，點單時複誦一次，出杯時再確認一次名字。忙的時候不要急著說話，先把手上的那一杯做好。打烊後要清洗蒸氣管、倒掉剩下的熱水、把豆子密封好放回櫃子。明天第一位客人七點半就會到，我們七點整要全部準備好。有不懂的地方，現在就問，不要等到客人在排隊的時候才問。另外，今天下午會有廠商送牛奶和紙杯過來，數量要點清楚再簽收；冰箱的溫度記錄每兩個小時寫一次。菜單板上的價格我晚一點再確認，先不要貼上去。如果咖啡機出現奇怪的聲音，先關掉電源再叫我，不要自己拆開來看。最後，明天早上記得提早十分鐘到，我們一起把開幕的流程從頭走一遍。" }, "next": "q" },
+        { "id": "q", "speaker": "rookie", "text": { "zh": "" }, "choices": [
+          { "id": "c1", "text": { "zh": "先試做一杯招牌拿鐵" }, "targetNodeId": "i" },
+          { "id": "c2", "text": { "zh": "我想先整理吧台" }, "targetNodeId": "i", "condition": "trust >= 1" }
+        ] },
+        { "id": "i", "kind": "input", "speaker": "narration", "expression": "rookieName", "next": "f" },
+        { "id": "f", "speaker": "manager", "portrait": "店長-微笑", "text": { "zh": "<rookieName>，明天就拜託你了。" }, "next": "z" },
+        { "id": "z", "kind": "end" }
+      ]
+    }
+  ]
+}
