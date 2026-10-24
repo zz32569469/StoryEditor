@@ -72,6 +72,7 @@ export function VariablePanel() {
           <div className="variable-table">
             <div className="variable-head">
               <span>名稱</span>
+              <span title="劇本「屬性變化」欄寫的名稱，例：信任">屬性名稱</span>
               <span>型別</span>
               <span>預設值</span>
               <span>說明</span>
@@ -91,6 +92,13 @@ export function VariablePanel() {
                     placeholder="例：courage"
                     title="改名會同步更新條件式、賦值與台詞裡的 <插值>"
                     onChange={(e) => updateVariable(variable.id, { id: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    value={variable.label ?? ''}
+                    placeholder="例：信任"
+                    title="劇本「屬性變化」欄寫的名稱。有填的變數就是屬性清單，清單外的名稱會被列為錯誤"
+                    onChange={(e) => updateVariable(variable.id, { label: e.target.value || undefined })}
                   />
                   <select
                     value={variable.type}

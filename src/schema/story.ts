@@ -12,8 +12,9 @@ import { TagRegistrySchema, TagSyntaxSchema } from './tags';
  *        讓劇本能以原本的欄位與編號匯出回去。全為選填。
  * 1.3.0：變數型別新增 `date`（執行期仍是字串）。舊檔照讀；
  *        但含 date 的檔案給 1.2.0 以前的讀取端會失敗。
+ * 1.4.0：變數新增選填的 `label`（屬性名稱），作為「屬性變化」欄的屬性清單。舊檔照讀。
  */
-export const FORMAT_VERSION = '1.3.0';
+export const FORMAT_VERSION = '1.4.0';
 
 /**
  * 多語系文字。key 為語言代碼，value 為含特效標記的字串。
@@ -69,6 +70,13 @@ export const VariableSchema = z.object({
   type: VariableTypeSchema,
   default: z.union([z.boolean(), z.number(), z.string()]),
   description: z.string().default(''),
+  /**
+   * 屬性名稱：劇本表「屬性變化」欄寫的中文名（例「信任」）。
+   *
+   * 變數 id 只能是英數（運算式要用），劇本寫的卻是中文，靠這個對起來。
+   * 有 label 的變數就是專案的屬性清單；清單外的名稱會被當成寫錯並列出來。
+   */
+  label: z.string().optional(),
 });
 export type Variable = z.infer<typeof VariableSchema>;
 

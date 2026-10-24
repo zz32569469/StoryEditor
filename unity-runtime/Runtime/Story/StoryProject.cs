@@ -40,6 +40,8 @@ namespace StoryRuntime.Story {
         [JsonProperty("type")] public string Type;
         [JsonProperty("default")] public object DefaultValue;
         [JsonProperty("description")] public string Description;
+        // 屬性名稱：劇本「屬性變化」欄寫的中文名，對到這個變數
+        [JsonProperty("label")] public string Label;
     }
 
     public sealed class StoryCharacter {
