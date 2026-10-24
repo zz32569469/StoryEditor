@@ -56,18 +56,20 @@ namespace StoryRuntime.Story {
         public static void SeedDefaults(StoryProject project, IStoryVariables into) {
             foreach (StoryVariable variable in project.Variables) {
                 if (variable.Id == null) continue;
-                into.Set(variable.Id, FromDefault(variable.DefaultValue));
+                into.Set(variable.Id, DefaultValueOf(variable));
             }
         }
 
-        static StoryValue FromDefault(object value) {
-            switch (value) {
+        // 遊戲端只想補「還沒有值」的變數時用 —— SeedDefaults 會整批覆蓋，
+        // 對已經接到遊戲欄位的變數（composure 之類）那等於把遊戲狀態重設掉。
+        public static StoryValue DefaultValueOf(StoryVariable variable) {
+            switch (variable.DefaultValue) {
                 case null:   return StoryValue.Text("");
                 case bool b: return StoryValue.Bool(b);
                 case string s: return StoryValue.Text(s);
                 case long l: return StoryValue.Number(l);
                 case double d: return StoryValue.Number(d);
-                default: return StoryValue.Text(value.ToString());
+                default: return StoryValue.Text(variable.DefaultValue.ToString());
             }
         }
 
