@@ -50,6 +50,8 @@ state = StoryPlayer.SubmitInput(project, state, values, variables);
 
 `StartScene` **不會**自己鋪變數預設值 —— 那會在每次進劇情時把遊戲狀態重設掉。
 需要時自己呼叫 `StoryPlayer.SeedDefaults(project, variables)`（新遊戲開始時）。
+`SeedDefaults` 會整批覆蓋；已經接到遊戲欄位的變數（composure 之類）不能這樣鋪，
+改用 `StoryPlayer.DefaultValueOf(variable)` 只補劇本專用、還沒有值的那幾個。
 
 狀態型別叫 `StoryState`（網頁端叫 `PlayerState`）—— 遊戲多半已經有自己的 `PlayerState`，
 同名會讓 `using StoryRuntime.Story` 編譯失敗。
